@@ -1,0 +1,22 @@
+[project]
+name = "rag-ops"
+version = "0.1.0"
+description = "RAGOps for application metrics"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.136.3",
+    "uvicorn[standard]>=0.49.0",
+    "matplotlib>=3.10.9",
+    "mlxtend>=0.25.0",
+    "numpy>=2.4.6",
+    "pandas>=3.0.3",
+    "scikit-learn>=1.9.0",
+    "torch>=2.12.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
