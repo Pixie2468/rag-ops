@@ -1,0 +1,46 @@
+name: rag-ops
+
+services:
+  # PostgreSQL database
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-ragops}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-ragops}
+      POSTGRES_DB: ${DB_NAME:-eval_results}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-ragops} -d ${DB_NAME:-eval_results}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - rag-ops-net
+
+  # Python FastAPI backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      ENV: ${ENV:-development}
+      # DB_URL uses Docker service name "db" as the host
+      DB_URL: postgresql+asyncpg://${DB_USER:-ragops}:${DB_PASSWORD:-ragops}@db:5432/${DB_NAME:-eval_results}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - rag-ops-net
+
+volumes:
+  db_data:
+
+networks:
+  rag-ops-net:
+    driver: bridge

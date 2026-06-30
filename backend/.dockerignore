@@ -1,0 +1,24 @@
+# Virtual environment — never send to Docker (this is what caused "context canceled")
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+
+# Dev/test artifacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Editor
+.vscode/
+.idea/
+
+# Local env
+.env
