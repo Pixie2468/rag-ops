@@ -15,7 +15,7 @@ rag-ops/
 ## Requirements
 
 | Tool | Version |
-|------|---------|
+| --- | --- |
 | Docker & Docker Compose | v2.20+ |
 | Python + [uv](https://github.com/astral-sh/uv) | 3.14+ (local dev only) |
 | Go | 1.26+ (local dev only) |
@@ -70,7 +70,7 @@ go run . --help
 Copy `.env.example` → `.env` and adjust as needed.
 
 | Variable | Default | Description |
-|----------|---------|-------------|
+| --- | --- | --- |
 | `ENV` | `development` | App environment |
 | `DB_URL` | — | Full DSN (local dev / overrides compose) |
 | `DB_USER` | `ragops` | Postgres username (compose) |
@@ -83,7 +83,7 @@ Copy `.env.example` → `.env` and adjust as needed.
 ## Docker Compose services
 
 | Service | Image / Build | Port |
-|---------|--------------|------|
+| --- | --- | --- |
 | `db` | `postgres:17-alpine` | internal |
 | `backend` | `./backend/Dockerfile` | `8000` |
 

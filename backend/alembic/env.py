@@ -1,4 +1,5 @@
 import asyncio
+import os
 from logging.config import fileConfig
 from typing import cast
 
@@ -16,6 +17,11 @@ config = context.config
 # Configure logging
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
+# Override sqlalchemy.url with DB_URL env var (set by docker-compose)
+# Falls back to the value in alembic.ini for local development
+if os.environ.get("DB_URL"):
+    config.set_main_option("sqlalchemy.url", os.environ["DB_URL"])
 
 import rag_ops.schemas
 from rag_ops.schemas.base import Base
