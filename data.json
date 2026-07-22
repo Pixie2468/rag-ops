@@ -1,0 +1,8 @@
+{
+  "query": "What is the capital of France?",
+  "context_chunks": [
+    "France is a country in Western Europe.",
+    "Paris is the capital and most populous city of France."
+  ],
+  "answer": "The capital of France is Paris."
+}

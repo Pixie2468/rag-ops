@@ -1,5 +1,5 @@
 # Build stage
-FROM python:3.14-slim AS builder
+FROM python:3.12-slim AS builder
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
@@ -20,7 +20,7 @@ RUN uv sync --frozen --no-dev
 
 
 # Runtime stage
-FROM python:3.14-slim AS runtime
+FROM python:3.12-slim AS runtime
 
 WORKDIR /app
 

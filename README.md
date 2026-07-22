@@ -17,8 +17,31 @@ rag-ops/
 | Tool | Version |
 | --- | --- |
 | Docker & Docker Compose | v2.20+ |
-| Python + [uv](https://github.com/astral-sh/uv) | 3.14+ (local dev only) |
-| Go | 1.26+ (local dev only) |
+| Python + [uv](https://github.com/astral-sh/uv) | 3.12+ (local dev only) |
+| Go | 1.22+ (local dev only) |
+
+---
+
+## Installation (TUI)
+
+**Option 1: Homebrew (macOS / Linux)**
+The easiest way to install the TUI is via Homebrew:
+
+```bash
+brew install Pixie2468/rag-ops/ragops
+```
+
+**Option 2: Download Pre-compiled Binary**
+You can download the latest pre-compiled executable for your operating system from the [Releases](https://github.com/Pixie2468/rag-ops/releases) page.
+
+**Option 3: Run from source**
+If you want to run the CLI directly from source:
+
+```bash
+git clone https://github.com/Pixie2468/rag-ops.git
+cd rag-ops/cli
+go run . --help
+```
 
 ---
 
@@ -57,6 +80,8 @@ uv run uvicorn rag_ops.main:app --reload
 ### CLI
 
 See [`cli/README.md`](cli/README.md) for detailed setup instructions.
+
+If you have already cloned the repository:
 
 ```bash
 cd cli
