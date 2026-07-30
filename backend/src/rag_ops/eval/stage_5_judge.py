@@ -14,7 +14,7 @@ from google.genai import types
 class JudgeVerdict(BaseModel):
     """Result of the LLM-as-a-Judge evaluation."""
     reasoning: str
-    score: Literal[0, 1]
+    score: int
 
 
 def run_judge(
@@ -70,7 +70,7 @@ You MUST provide your reasoning BEFORE giving the score.
 
     try:
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-flash-latest',
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type='application/json',

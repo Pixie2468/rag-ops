@@ -1,6 +1,8 @@
 # RAGOps — Backend
 
-FastAPI REST API that ingests LLM traces and evaluation metrics, backed by PostgreSQL. It features a 5-stage fail-fast RAG evaluation pipeline for automated answer grading.
+FastAPI REST API that ingests LLM traces and evaluation metrics, backed by PostgreSQL. 
+
+It features a 5-stage fail-fast RAG evaluation pipeline for automated answer grading. **See [../PIPELINE.md](../PIPELINE.md) for an in-depth breakdown of the evaluation stages and algorithms.**
 
 ## Stack
 

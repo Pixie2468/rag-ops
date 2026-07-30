@@ -28,6 +28,7 @@ services:
     restart: unless-stopped
     environment:
       ENV: ${ENV:-development}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
       # DB_URL uses Docker service name "db" as the host
       DB_URL: postgresql+asyncpg://${DB_USER:-ragops}:${DB_PASSWORD:-ragops}@db:5432/${DB_NAME:-eval_results}
     ports:

@@ -12,6 +12,21 @@ rag-ops/
 
 ---
 
+## Evaluation Pipeline
+
+RAGOps employs a 5-stage **fail-fast evaluation pipeline** to thoroughly grade the quality of RAG outputs (Query, Context, and Answer).
+By layering lightweight deterministic checks before heavier models, the pipeline is both fast and accurate.
+
+1. **Sanity & Refusal Gate** (Regex)
+2. **Context Relevance** (Cross-Encoder: `ms-marco-MiniLM`)
+3. **Lexical Groundedness** (spaCy NER & Regex)
+4. **Semantic Faithfulness** (NLI: `deberta-v3`)
+5. **LLM-as-a-Judge** (Google Gemini)
+
+> **Read the full breakdown in [PIPELINE.md](PIPELINE.md).**
+
+---
+
 ## Requirements
 
 | Tool | Version |

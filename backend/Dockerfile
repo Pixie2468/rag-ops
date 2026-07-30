@@ -18,6 +18,9 @@ COPY . .
 # Install the project itself
 RUN uv sync --frozen --no-dev
 
+# Download spaCy model
+RUN uv pip install pip && uv run python -m spacy download en_core_web_sm
+
 
 # Runtime stage
 FROM python:3.12-slim AS runtime
