@@ -36,10 +36,9 @@ COPY --from=builder /app/alembic.ini /app/alembic.ini
 # Make the venv's binaries available on PATH
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PORT=8000
+    PYTHONDONTWRITEBYTECODE=1
 
-EXPOSE 8000
+EXPOSE 10000
 
-# Run DB migrations then start the API server
-CMD ["sh", "-c", "alembic upgrade head || true; exec uvicorn rag_ops.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Run DB migrations then start the API server on Render's port 10000
+CMD ["sh", "-c", "alembic upgrade head || true; exec uvicorn rag_ops.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
