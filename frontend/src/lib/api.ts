@@ -19,20 +19,96 @@ export const DEFAULT_BACKEND_URL: string =
   (typeof process !== "undefined" && (process.env.BACKEND_URL || process.env.VITE_BACKEND_URL)) ||
   "http://localhost:8000";
 
-export async function checkBackendHealth(baseUrl: string = DEFAULT_BACKEND_URL): Promise<boolean> {
+export interface HealthCheckResult {
+  ok: boolean;
+  data?: any;
+  error?: string;
+  statusCode?: number;
+  durationMs?: number;
+}
+
+export async function checkBackendHealth(
+  baseUrl: string = DEFAULT_BACKEND_URL,
+  timeoutMs: number = 30000
+): Promise<HealthCheckResult> {
+  const start = Date.now();
+  const cleanUrl = baseUrl.replace(/\/+$/, "");
+  // Query param to bypass any intermediate caching
+  const healthUrl = `${cleanUrl}/health?_t=${Date.now()}`;
+
   try {
     const controller = new AbortController();
-    // 35-second timeout to comfortably accommodate Render free-tier cold starts
-    const id = setTimeout(() => controller.abort(), 35000);
-    const res = await fetch(`${baseUrl.replace(/\/+$/, "")}/health`, {
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+
+    const res = await fetch(healthUrl, {
       method: "GET",
+      mode: "cors",
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+      },
       signal: controller.signal,
     });
     clearTimeout(id);
-    return res.ok;
-  } catch {
-    return false;
+
+    const durationMs = Date.now() - start;
+
+    if (res.ok) {
+      try {
+        const data = await res.json();
+        return { ok: true, data, statusCode: res.status, durationMs };
+      } catch {
+        return { ok: true, statusCode: res.status, durationMs };
+      }
+    } else {
+      return {
+        ok: false,
+        statusCode: res.status,
+        error: `Server responded with HTTP ${res.status}: ${res.statusText}`,
+        durationMs,
+      };
+    }
+  } catch (err: any) {
+    const durationMs = Date.now() - start;
+    let message = err?.message || String(err);
+    if (err?.name === "AbortError" || message.includes("aborted")) {
+      message = `Probe timed out after ${(timeoutMs / 1000).toFixed(0)}s (cold start in progress)`;
+    } else if (message.includes("Failed to fetch") || message.includes("NetworkError")) {
+      message = `Network error: Could not reach ${cleanUrl}. Check connectivity or CORS.`;
+    }
+    return {
+      ok: false,
+      error: message,
+      durationMs,
+    };
   }
+}
+
+export async function wakeUpAndPollBackend(
+  baseUrl: string = DEFAULT_BACKEND_URL,
+  onProgress?: (info: { elapsedSec: number; attempt: number }) => void,
+  maxWaitSec: number = 90
+): Promise<HealthCheckResult> {
+  const startTime = Date.now();
+  let attempt = 0;
+
+  while (Date.now() - startTime < maxWaitSec * 1000) {
+    attempt++;
+    const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
+    onProgress?.({ elapsedSec, attempt });
+
+    // Each probe has a 7s timeout
+    const result = await checkBackendHealth(baseUrl, 7000);
+    if (result.ok) {
+      return result;
+    }
+
+    // Wait 2 seconds before next probe
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+
+  // Final check
+  return checkBackendHealth(baseUrl, 10000);
 }
 
 export async function runEvaluationApi(

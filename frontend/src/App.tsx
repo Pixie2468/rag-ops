@@ -13,10 +13,12 @@ import { PRESETS, type PresetItem } from "@/lib/presets";
 import { getStageStates } from "@/lib/pipeline-stages";
 import {
   checkBackendHealth,
+  wakeUpAndPollBackend,
   fetchDbStatusApi,
   runEvaluationApi,
   simulateEvaluation,
   DEFAULT_BACKEND_URL,
+  type HealthCheckResult,
 } from "@/lib/api";
 import type { DbStatusResponse, EvalRequest, EvalResponse } from "@/types/eval";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -51,6 +53,8 @@ export function App() {
   const [isBackendOnline, setIsBackendOnline] = useState(false);
   const [isCheckingHealth, setIsCheckingHealth] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [pollStatus, setPollStatus] = useState<string | null>(null);
+  const [backendError, setBackendError] = useState<string | null>(null);
 
   const handleUpdateBackendUrl = (newUrl: string) => {
     const clean = newUrl.trim().replace(/\/+$/, "");
@@ -96,15 +100,33 @@ export function App() {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   };
 
-  // Check backend health & database status
-  const handleCheckHealth = useCallback(async (overrideUrl?: string) => {
+  // Check backend health & database status (with active wake-up polling)
+  const handleCheckHealth = useCallback(async (overrideUrl?: string, usePolling: boolean = false) => {
     const targetUrl = overrideUrl || backendUrl;
     setIsCheckingHealth(true);
-    const online = await checkBackendHealth(targetUrl);
-    setIsBackendOnline(online);
+    setBackendError(null);
 
-    if (online) {
+    let res: HealthCheckResult;
+    if (usePolling) {
+      setPollStatus("Contacting Render cloud instance...");
+      res = await wakeUpAndPollBackend(
+        targetUrl,
+        ({ elapsedSec, attempt }) => {
+          setPollStatus(`Waking up Render backend (Attempt ${attempt}, ${elapsedSec}s elapsed)...`);
+        },
+        75
+      );
+    } else {
+      setPollStatus("Checking backend connection...");
+      res = await checkBackendHealth(targetUrl, 15000);
+    }
+
+    setPollStatus(null);
+    setIsBackendOnline(res.ok);
+
+    if (res.ok) {
       setIsDemoMode(false);
+      setBackendError(null);
       try {
         const dbRes = await fetchDbStatusApi(targetUrl);
         setDbStatus(dbRes);
@@ -112,13 +134,26 @@ export function App() {
         setDbStatus({
           connected: false,
           provider: "in-memory-fallback",
-          message: "Could not fetch DB status.",
+          message: "Connected to API. DB status unavailable.",
         });
       }
+    } else {
+      setBackendError(res.error || "Backend is offline or cold-starting.");
     }
 
     setIsCheckingHealth(false);
   }, [backendUrl]);
+
+  // Keep-alive ping every 9 minutes so Render free-tier never goes to sleep while page is open
+  useEffect(() => {
+    if (!isBackendOnline || backendUrl.includes("localhost")) return;
+    const interval = setInterval(() => {
+      fetch(`${backendUrl.replace(/\/+$/, "")}/health?_t=${Date.now()}`, {
+        cache: "no-store",
+      }).catch(() => {});
+    }, 9 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [isBackendOnline, backendUrl]);
 
   useEffect(() => {
     handleCheckHealth();
@@ -193,21 +228,28 @@ export function App() {
               ) : (
                 <Sparkles className="size-4 shrink-0 text-amber-500" />
               )}
-              <span>
-                {isCheckingHealth ? (
-                  <>
-                    <strong>Connecting to backend:</strong> Probing <code className="font-mono bg-amber-500/20 px-1 py-0.5 rounded text-[11px]">{backendUrl}</code> (Render cold starts take ~20-30s)...
-                  </>
-                ) : isDemoMode ? (
-                  <>
-                    <strong>Demo Mode Active:</strong> Using simulated local evaluation. You can switch to your live production Render API anytime.
-                  </>
-                ) : (
-                  <>
-                    <strong>Live Backend Selected:</strong> Requests will be sent to <code className="font-mono bg-amber-500/20 px-1 py-0.5 rounded text-[11px]">{backendUrl}</code>.
-                  </>
+              <div className="space-y-0.5">
+                <div>
+                  {isCheckingHealth ? (
+                    <span>
+                      <strong>Connecting:</strong> {pollStatus || "Connecting to Render backend..."}
+                    </span>
+                  ) : isDemoMode ? (
+                    <span>
+                      <strong>Demo Mode Active:</strong> Using simulated local evaluation. Switch to your live Render backend anytime.
+                    </span>
+                  ) : (
+                    <span>
+                      <strong>Live Mode:</strong> Target backend is <code className="font-mono bg-amber-500/20 px-1 py-0.5 rounded text-[11px]">{backendUrl}</code>.
+                    </span>
+                  )}
+                </div>
+                {backendError && !isCheckingHealth && (
+                  <div className="text-[11px] text-destructive font-mono">
+                    {backendError}
+                  </div>
                 )}
-              </span>
+              </div>
             </div>
             <div className="flex items-center gap-2 self-end sm:self-auto shrink-0 flex-wrap">
               <Button
@@ -217,7 +259,7 @@ export function App() {
                   const nextMode = !isDemoMode;
                   setIsDemoMode(nextMode);
                   if (!nextMode) {
-                    handleCheckHealth();
+                    handleCheckHealth(undefined, true);
                   }
                 }}
                 className="h-7 text-xs font-medium"
@@ -235,7 +277,7 @@ export function App() {
                   if (url && url.trim()) {
                     const clean = url.trim().replace(/\/+$/, "");
                     handleUpdateBackendUrl(clean);
-                    handleCheckHealth(clean);
+                    handleCheckHealth(clean, true);
                   }
                 }}
                 className="h-7 text-xs border-amber-500/40 hover:bg-amber-500/20 font-medium"
@@ -245,11 +287,11 @@ export function App() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleCheckHealth()}
+                onClick={() => handleCheckHealth(undefined, true)}
                 disabled={isCheckingHealth}
-                className="h-7 text-xs border-amber-500/40 hover:bg-amber-500/20"
+                className="h-7 text-xs border-amber-500/40 hover:bg-amber-500/20 font-medium"
               >
-                {isCheckingHealth ? "Checking..." : "Retry Connection"}
+                {isCheckingHealth ? "Waking Up..." : "Wake Up & Connect"}
               </Button>
             </div>
           </div>

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import AsyncGenerator
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header
+from fastapi import FastAPI, Header, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 # Automatically load .env from current directory, backend root, or project root
@@ -53,13 +53,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Enable CORS for local development & frontend
+# Enable CORS for local development & frontend (allow any web origin including Vercel)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_origin_regex=r"^https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Routers
@@ -97,8 +99,10 @@ async def root_info() -> dict:
 
 # Health check endpoint
 @app.get("/health", tags=["health"])
-async def health_check() -> dict:
+async def health_check(response: Response) -> dict:
     """Health check endpoint used by monitoring, frontend, and readiness probes."""
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
     has_gemini_key = bool(os.environ.get("GEMINI_API_KEY", "").strip())
     db_info = get_db_status()
     return {
