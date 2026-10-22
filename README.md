@@ -6,6 +6,7 @@
 rag-ops/
 ├── backend/        # FastAPI REST API + PostgreSQL (SQLAlchemy / Alembic)
 ├── cli/            # Go TUI/CLI for exploring traces (cobra + lipgloss)
+├── frontend/       # React 19 + Bun + Tailwind evaluation dashboard
 ├── docker-compose.yml
 └── .env.example
 ```
@@ -102,6 +103,18 @@ If you have already cloned the repository:
 cd cli
 go run . --help
 ```
+
+### Frontend
+
+See [`frontend/README.md`](frontend/README.md) for detailed setup instructions.
+
+```bash
+cd frontend
+bun install
+bun dev
+```
+
+Open `http://localhost:3000` to launch the interactive evaluation playground.
 
 ---
 

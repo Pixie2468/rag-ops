@@ -52,6 +52,8 @@ def run_pipeline(
     query: str,
     context_chunks: list[str],
     answer: str,
+    api_key: str | None = None,
+    model: str | None = None,
 ) -> dict[str, Any]:
     """
     Run the full 5-stage evaluation pipeline.
@@ -63,6 +65,8 @@ def run_pipeline(
         query: The user's original question (Q).
         context_chunks: List of retrieved context chunk strings (C).
         answer: The LLM-generated answer (A).
+        api_key: Optional Gemini API key for Stage 5 LLM-as-a-Judge.
+        model: Optional Gemini model name for Stage 5.
 
     Returns:
         A dictionary matching the EvalResponse schema.
@@ -154,7 +158,11 @@ def run_pipeline(
         context=full_context,
         entity_overlap_pct=groundedness.entity_overlap_pct,
         entailment_ratio=faithfulness.entailment_ratio,
+        api_key=api_key,
+        model=model,
     )
+
+    metrics["judge_model"] = judge_result.model
 
     verdict = "Pass" if judge_result.score == 1 else "Fail"
     logger.info(
