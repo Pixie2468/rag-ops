@@ -18,6 +18,10 @@ COPY . .
 # Install the project itself
 RUN uv sync --frozen --no-dev
 
+# Replace heavy CUDA PyTorch with lightweight CPU-only PyTorch for low-memory cloud hosts
+RUN uv pip install --no-cache --reinstall torch --index-url https://download.pytorch.org/whl/cpu && \
+    uv pip uninstall -y cuda-bindings cuda-toolkit nvidia-cuda-runtime-cu12 nvidia-cuda-cupti-cu12 nvidia-cudnn-cu12 nvidia-cublas-cu12 nvidia-cufft-cu12 nvidia-curand-cu12 nvidia-cusolver-cu12 nvidia-cusparse-cu12 nvidia-nvjitlink-cu12 nvidia-nvtx-cu12 || true
+
 # Download spaCy model
 RUN uv pip install pip && uv run python -m spacy download en_core_web_sm
 
@@ -33,10 +37,17 @@ COPY --from=builder /app/src /app/src
 COPY --from=builder /app/alembic /app/alembic
 COPY --from=builder /app/alembic.ini /app/alembic.ini
 
-# Make the venv's binaries available on PATH
+# Make the venv's binaries available on PATH and enforce low memory allocations
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    MALLOC_ARENA_MAX=2 \
+    TORCH_NUM_THREADS=1 \
+    OMP_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1 \
+    OPENBLAS_NUM_THREADS=1 \
+    VECLIB_MAXIMUM_THREADS=1 \
+    NUMEXPR_NUM_THREADS=1
 
 EXPOSE 10000
 

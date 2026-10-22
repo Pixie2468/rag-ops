@@ -7,11 +7,9 @@ context chunks to the user query using a cross-encoder model.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
-try:
-    from sentence_transformers import CrossEncoder
-except ImportError:
-    CrossEncoder = None
+CrossEncoder: Any = None
 
 
 @dataclass
@@ -23,24 +21,23 @@ class RelevanceResult:
     is_relevant: bool
 
 
-_model: CrossEncoder | None = None
+_model: Any = None
 
 
-def _get_model() -> CrossEncoder:
+def _get_model() -> Any:
     """
-    Lazy load the cross-encoder model.
-
-    Returns:
-        The CrossEncoder instance.
+    Lazy load the cross-encoder model only on first demand.
+    Keeps memory minimal during server startup.
     """
     global _model
     if _model is None:
-        if CrossEncoder is None:
+        try:
+            from sentence_transformers import CrossEncoder as _CE
+            _model = _CE("cross-encoder/ms-marco-MiniLM-L-6-v2")
+        except Exception as e:
             raise ImportError(
-                "sentence_transformers is not installed. "
-                "Please install it to use this module."
+                f"Failed to load sentence_transformers cross-encoder: {e}"
             )
-        _model = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
     return _model
 
 

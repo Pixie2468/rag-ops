@@ -9,10 +9,7 @@ from typing import Any
 
 import numpy as np
 
-try:
-    from sentence_transformers import CrossEncoder
-except ImportError:
-    CrossEncoder = None
+CrossEncoder: Any = None
 
 
 @dataclass
@@ -26,15 +23,16 @@ class FaithfulnessResult:
 _model = None
 
 def _get_model() -> Any:
-    """Lazy initialization of the cross-encoder model."""
+    """Lazy initialization of the cross-encoder model to save memory."""
     global _model
     if _model is None:
-        if CrossEncoder is None:
+        try:
+            from sentence_transformers import CrossEncoder as _CE
+            _model = _CE("cross-encoder/nli-deberta-v3-small")
+        except Exception as e:
             raise ImportError(
-                "sentence-transformers is not installed. "
-                "Please install it to use the faithfulness check."
+                f"Failed to load sentence_transformers for faithfulness check: {e}"
             )
-        _model = CrossEncoder("cross-encoder/nli-deberta-v3-small")
     return _model
 
 

@@ -8,11 +8,9 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Any
 
-try:
-    import spacy
-except ImportError:
-    spacy = None
+spacy: Any = None
 
 
 @dataclass
@@ -35,19 +33,16 @@ _nlp = None
 
 
 def _get_nlp():
-    """Lazy load the spaCy model."""
+    """Lazy load the spaCy model only when called to conserve server memory."""
     global _nlp
     if _nlp is None:
-        if spacy is None:
-            raise ImportError(
-                "spacy is not installed. Please install it to use this module."
-            )
         try:
-            _nlp = spacy.load("en_core_web_sm")
-        except OSError:
+            import spacy as _spacy
+            _nlp = _spacy.load("en_core_web_sm")
+        except Exception as e:
+            # Fallback or clean error if spaCy cannot be loaded
             raise OSError(
-                "spaCy model 'en_core_web_sm' not found. "
-                "Run `python -m spacy download en_core_web_sm`"
+                f"Could not load spaCy model 'en_core_web_sm': {e}"
             )
     return _nlp
 
