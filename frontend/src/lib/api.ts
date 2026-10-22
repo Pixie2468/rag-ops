@@ -29,12 +29,11 @@ export interface HealthCheckResult {
 
 export async function checkBackendHealth(
   baseUrl: string = DEFAULT_BACKEND_URL,
-  timeoutMs: number = 30000
+  timeoutMs: number = 90000
 ): Promise<HealthCheckResult> {
   const start = Date.now();
   const cleanUrl = baseUrl.replace(/\/+$/, "");
-  // Query param to bypass any intermediate caching
-  const healthUrl = `${cleanUrl}/health?_t=${Date.now()}`;
+  const healthUrl = `${cleanUrl}/health`;
 
   try {
     const controller = new AbortController();
@@ -42,8 +41,6 @@ export async function checkBackendHealth(
 
     const res = await fetch(healthUrl, {
       method: "GET",
-      mode: "cors",
-      cache: "no-store",
       headers: {
         Accept: "application/json",
       },
@@ -72,7 +69,7 @@ export async function checkBackendHealth(
     const durationMs = Date.now() - start;
     let message = err?.message || String(err);
     if (err?.name === "AbortError" || message.includes("aborted")) {
-      message = `Probe timed out after ${(timeoutMs / 1000).toFixed(0)}s (cold start in progress)`;
+      message = `Connection timed out after ${(timeoutMs / 1000).toFixed(0)}s while waiting for backend.`;
     } else if (message.includes("Failed to fetch") || message.includes("NetworkError")) {
       message = `Network error: Could not reach ${cleanUrl}. Check connectivity or CORS.`;
     }
@@ -82,33 +79,6 @@ export async function checkBackendHealth(
       durationMs,
     };
   }
-}
-
-export async function wakeUpAndPollBackend(
-  baseUrl: string = DEFAULT_BACKEND_URL,
-  onProgress?: (info: { elapsedSec: number; attempt: number }) => void,
-  maxWaitSec: number = 90
-): Promise<HealthCheckResult> {
-  const startTime = Date.now();
-  let attempt = 0;
-
-  while (Date.now() - startTime < maxWaitSec * 1000) {
-    attempt++;
-    const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
-    onProgress?.({ elapsedSec, attempt });
-
-    // Each probe has a 7s timeout
-    const result = await checkBackendHealth(baseUrl, 7000);
-    if (result.ok) {
-      return result;
-    }
-
-    // Wait 2 seconds before next probe
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-  }
-
-  // Final check
-  return checkBackendHealth(baseUrl, 10000);
 }
 
 export async function runEvaluationApi(

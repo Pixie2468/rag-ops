@@ -13,7 +13,6 @@ import { PRESETS, type PresetItem } from "@/lib/presets";
 import { getStageStates } from "@/lib/pipeline-stages";
 import {
   checkBackendHealth,
-  wakeUpAndPollBackend,
   fetchDbStatusApi,
   runEvaluationApi,
   simulateEvaluation,
@@ -100,27 +99,24 @@ export function App() {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   };
 
-  // Check backend health & database status (with active wake-up polling)
-  const handleCheckHealth = useCallback(async (overrideUrl?: string, usePolling: boolean = false) => {
+  // Check backend health & database status
+  const handleCheckHealth = useCallback(async (overrideUrl?: string) => {
     const targetUrl = overrideUrl || backendUrl;
     setIsCheckingHealth(true);
     setBackendError(null);
 
-    let res: HealthCheckResult;
-    if (usePolling) {
-      setPollStatus("Contacting Render cloud instance...");
-      res = await wakeUpAndPollBackend(
-        targetUrl,
-        ({ elapsedSec, attempt }) => {
-          setPollStatus(`Waking up Render backend (Attempt ${attempt}, ${elapsedSec}s elapsed)...`);
-        },
-        75
-      );
-    } else {
-      setPollStatus("Checking backend connection...");
-      res = await checkBackendHealth(targetUrl, 15000);
-    }
+    // Live elapsed timer for cold starts
+    let sec = 0;
+    setPollStatus("Contacting backend...");
+    const timer = setInterval(() => {
+      sec++;
+      if (sec >= 3) {
+        setPollStatus(`Connecting to Render (${sec}s elapsed — cold starts take ~30-60s)...`);
+      }
+    }, 1000);
 
+    const res = await checkBackendHealth(targetUrl, 90000);
+    clearInterval(timer);
     setPollStatus(null);
     setIsBackendOnline(res.ok);
 
@@ -277,7 +273,7 @@ export function App() {
                   if (url && url.trim()) {
                     const clean = url.trim().replace(/\/+$/, "");
                     handleUpdateBackendUrl(clean);
-                    handleCheckHealth(clean, true);
+                    handleCheckHealth(clean);
                   }
                 }}
                 className="h-7 text-xs border-amber-500/40 hover:bg-amber-500/20 font-medium"
@@ -287,11 +283,11 @@ export function App() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleCheckHealth(undefined, true)}
+                onClick={() => handleCheckHealth()}
                 disabled={isCheckingHealth}
                 className="h-7 text-xs border-amber-500/40 hover:bg-amber-500/20 font-medium"
               >
-                {isCheckingHealth ? "Waking Up..." : "Wake Up & Connect"}
+                {isCheckingHealth ? "Connecting..." : "Retry Connection"}
               </Button>
             </div>
           </div>
