@@ -21,7 +21,12 @@ if config.config_file_name is not None:
 # Override sqlalchemy.url with DB_URL env var (set by docker-compose)
 # Falls back to the value in alembic.ini for local development
 if os.environ.get("DB_URL"):
-    config.set_main_option("sqlalchemy.url", os.environ["DB_URL"])
+    raw_url = os.environ["DB_URL"].strip()
+    if raw_url.startswith("postgres://"):
+        raw_url = "postgresql+asyncpg://" + raw_url[len("postgres://"):]
+    elif raw_url.startswith("postgresql://") and not raw_url.startswith("postgresql+"):
+        raw_url = "postgresql+asyncpg://" + raw_url[len("postgresql://"):]
+    config.set_main_option("sqlalchemy.url", raw_url)
 
 import rag_ops.schemas
 from rag_ops.schemas.base import Base
