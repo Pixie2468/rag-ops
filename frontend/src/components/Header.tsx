@@ -114,14 +114,23 @@ export function Header({
 
           {/* Demo Mode Toggle */}
           <Button
-            variant={isDemoMode ? "default" : "outline"}
+            variant={isDemoMode ? "outline" : "default"}
             size="sm"
             onClick={() => setIsDemoMode(!isDemoMode)}
-            className="h-8 text-xs font-medium"
+            className="h-8 text-xs font-medium gap-1.5"
             title="Toggle between real backend API and offline simulator"
           >
-            <Sparkles className="size-3 mr-1" />
-            {isDemoMode ? "Demo Mode ON" : "Use Real API"}
+            {isDemoMode ? (
+              <>
+                <Sparkles className="size-3 text-amber-500" />
+                <span>Demo Simulator</span>
+              </>
+            ) : (
+              <>
+                <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Live API Mode</span>
+              </>
+            )}
           </Button>
 
           {/* Theme Toggle */}

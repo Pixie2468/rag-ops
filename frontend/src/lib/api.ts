@@ -22,8 +22,8 @@ export const DEFAULT_BACKEND_URL: string =
 export async function checkBackendHealth(baseUrl: string = DEFAULT_BACKEND_URL): Promise<boolean> {
   try {
     const controller = new AbortController();
-    // 8-second timeout for cloud cold starts and network latency
-    const id = setTimeout(() => controller.abort(), 8000);
+    // 35-second timeout to comfortably accommodate Render free-tier cold starts
+    const id = setTimeout(() => controller.abort(), 35000);
     const res = await fetch(`${baseUrl.replace(/\/+$/, "")}/health`, {
       method: "GET",
       signal: controller.signal,

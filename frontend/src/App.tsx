@@ -27,6 +27,7 @@ import {
   ShieldCheck,
   Activity,
   Scale,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -114,8 +115,6 @@ export function App() {
           message: "Could not fetch DB status.",
         });
       }
-    } else {
-      setIsDemoMode(true);
     }
 
     setIsCheckingHealth(false);
@@ -152,6 +151,7 @@ export function App() {
       } else {
         const result = await runEvaluationApi(request, backendUrl);
         setResponse(result);
+        setIsBackendOnline(true);
       }
     } catch (err: unknown) {
       const msg = (err as Error).message || "An unexpected error occurred.";
@@ -185,15 +185,45 @@ export function App() {
       {/* Main Content Area */}
       <main className="flex-1 container mx-auto max-w-7xl px-4 sm:px-6 py-6 space-y-6">
         {/* Offline / Demo Notification Banner */}
-        {!isBackendOnline && (
+        {(!isBackendOnline || isDemoMode) && (
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-800 dark:text-amber-300">
             <div className="flex items-center gap-2.5">
-              <Sparkles className="size-4 shrink-0 text-amber-500" />
+              {isCheckingHealth ? (
+                <RefreshCw className="size-4 shrink-0 text-amber-500 animate-spin" />
+              ) : (
+                <Sparkles className="size-4 shrink-0 text-amber-500" />
+              )}
               <span>
-                <strong>Demo Mode Active:</strong> Backend API at <code className="font-mono bg-amber-500/20 px-1 py-0.5 rounded text-[11px]">{backendUrl}</code> is offline. You can test in simulated demo mode, or connect your live production Render backend.
+                {isCheckingHealth ? (
+                  <>
+                    <strong>Connecting to backend:</strong> Probing <code className="font-mono bg-amber-500/20 px-1 py-0.5 rounded text-[11px]">{backendUrl}</code> (Render cold starts take ~20-30s)...
+                  </>
+                ) : isDemoMode ? (
+                  <>
+                    <strong>Demo Mode Active:</strong> Using simulated local evaluation. You can switch to your live production Render API anytime.
+                  </>
+                ) : (
+                  <>
+                    <strong>Live Backend Selected:</strong> Requests will be sent to <code className="font-mono bg-amber-500/20 px-1 py-0.5 rounded text-[11px]">{backendUrl}</code>.
+                  </>
+                )}
               </span>
             </div>
-            <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+            <div className="flex items-center gap-2 self-end sm:self-auto shrink-0 flex-wrap">
+              <Button
+                variant={isDemoMode ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  const nextMode = !isDemoMode;
+                  setIsDemoMode(nextMode);
+                  if (!nextMode) {
+                    handleCheckHealth();
+                  }
+                }}
+                className="h-7 text-xs font-medium"
+              >
+                {isDemoMode ? "Switch to Live API" : "Switch to Demo Mode"}
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -219,7 +249,7 @@ export function App() {
                 disabled={isCheckingHealth}
                 className="h-7 text-xs border-amber-500/40 hover:bg-amber-500/20"
               >
-                Retry Backend
+                {isCheckingHealth ? "Checking..." : "Retry Connection"}
               </Button>
             </div>
           </div>
