@@ -20,12 +20,10 @@ if config.config_file_name is not None:
 
 # Override sqlalchemy.url with DB_URL env var (set by docker-compose)
 # Falls back to the value in alembic.ini for local development
+from rag_ops.db.session import sanitize_db_url
+
 if os.environ.get("DB_URL"):
-    raw_url = os.environ["DB_URL"].strip()
-    if raw_url.startswith("postgres://"):
-        raw_url = "postgresql+asyncpg://" + raw_url[len("postgres://"):]
-    elif raw_url.startswith("postgresql://") and not raw_url.startswith("postgresql+"):
-        raw_url = "postgresql+asyncpg://" + raw_url[len("postgresql://"):]
+    raw_url = sanitize_db_url(os.environ["DB_URL"].strip())
     config.set_main_option("sqlalchemy.url", raw_url)
 
 import rag_ops.schemas
@@ -111,10 +109,16 @@ def run_migrations_online() -> None:
             config.get_section(config.config_ini_section),
         )
 
+        url = config.get_main_option("sqlalchemy.url") or ""
+        connect_args = {}
+        if "supabase" in url or "ssl=require" in url:
+            connect_args["ssl"] = "require"
+
         connectable = async_engine_from_config(
             section,
             prefix="sqlalchemy.",
             poolclass=pool.NullPool,
+            connect_args=connect_args,
         )
 
     if isinstance(connectable, AsyncEngine):

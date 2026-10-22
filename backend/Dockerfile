@@ -40,5 +40,5 @@ ENV PATH="/app/.venv/bin:$PATH" \
 
 EXPOSE 10000
 
-# Run DB migrations then start the API server on Render's port 10000
-CMD ["sh", "-c", "alembic upgrade head || true; exec uvicorn rag_ops.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
+# Start the API server directly on Render's port 10000 (tables are auto-created by lifespan)
+CMD ["sh", "-c", "exec uvicorn rag_ops.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
