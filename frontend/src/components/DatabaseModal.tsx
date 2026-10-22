@@ -66,7 +66,7 @@ export function DatabaseModal({
 
   const copyTemplate = () => {
     navigator.clipboard.writeText(
-      "postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres"
+      "postgresql://postgres.[YOUR-PROJECT-REF]:[YOUR-PASSWORD]@aws-0-[REGION].pooler.supabase.com:5432/postgres"
     );
     setHasCopied(true);
     setTimeout(() => setHasCopied(false), 2000);
@@ -134,13 +134,13 @@ export function DatabaseModal({
             </a>
           </div>
           <ol className="list-decimal list-inside space-y-1 text-muted-foreground text-[11px] leading-relaxed">
-            <li>Open your Supabase project & go to <strong>Project Settings &gt; Database</strong>.</li>
-            <li>Under <strong>Connection string</strong>, copy the <strong>URI</strong> (Node.js/Session or Direct).</li>
+            <li>In Supabase, go to <strong>Project Settings &gt; Database</strong>.</li>
+            <li>Under <strong>Connection String</strong>, select <strong>Connection pooler (Session mode, port 5432)</strong> for IPv4 compatibility.</li>
             <li>Replace <code>[YOUR-PASSWORD]</code> with your database password and paste below.</li>
           </ol>
           <div className="flex items-center justify-between rounded bg-background/80 px-2 py-1 text-[11px] font-mono border">
             <span className="truncate pr-2 text-muted-foreground">
-              postgresql://postgres:[PASS]@db.[REF].supabase.co:5432/postgres
+              postgresql://postgres.[REF]:[PASS]@aws-0-[REGION].pooler.supabase.com:5432/postgres
             </span>
             <Button
               type="button"

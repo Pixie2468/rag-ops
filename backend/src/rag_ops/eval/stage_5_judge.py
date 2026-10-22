@@ -1,5 +1,5 @@
 """
-Stage 5: LLM-as-a-Judge check using Google Gemini.
+Stage 5: LLM-as-a-Judge check using Google Gemini with Tiered Fallback Pool.
 """
 from __future__ import annotations
 
@@ -13,13 +13,21 @@ from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
+# Ordered from most capable to cheapest/highest throughput
+MODEL_FALLBACK_POOL = [
+    "gemini-3.8-flash",         # Tier 1: Highest intelligence & complex multi-hop reasoning
+    "gemini-3.5-flash",         # Tier 2: Battle-tested, balanced performance & cost
+    "gemini-3.5-flash-lite",    # Tier 3: 50% cheaper, high rate limit & lower latency
+    "gemini-flash-lite-latest", # Tier 4: Ultra-cheap emergency fallback
+]
+
 
 class JudgeVerdict(BaseModel):
     """Result of the LLM-as-a-Judge evaluation."""
 
     reasoning: str
     score: int
-    model: str = "gemini-2.5-flash"
+    model: str = "gemini-3.5-flash"
 
 
 def mask_api_key(api_key: str | None) -> str | None:
@@ -45,7 +53,6 @@ def verify_gemini_api_key(api_key: str) -> tuple[bool, str]:
 
     try:
         client = genai.Client(api_key=clean_key)
-        # Verify key authentication with a lightweight metadata list call
         _ = list(client.models.list(config={"page_size": 1}))
         return True, "API key verified successfully with Google Gemini."
     except Exception as e:
@@ -65,7 +72,10 @@ def run_judge(
     model: str | None = None,
 ) -> JudgeVerdict:
     """
-    Run LLM-as-a-Judge evaluation on the RAG output.
+    Run LLM-as-a-Judge evaluation on the RAG output with tiered fallback.
+
+    If the primary model is busy (503), rate-limited (429), or unavailable (404),
+    it automatically cascades down the pool to cheaper, faster models.
 
     Args:
         query: The user query.
@@ -74,10 +84,10 @@ def run_judge(
         entity_overlap_pct: Pre-computed entity overlap percentage.
         entailment_ratio: Pre-computed entailment ratio.
         api_key: Optional Gemini API key. If not provided, it will be read from GEMINI_API_KEY.
-        model: Optional model name to use (defaults to gemini-2.5-flash with fallbacks).
+        model: Optional model name to try first (defaults to gemini-3.8-flash with fallbacks).
 
     Returns:
-        JudgeVerdict with reasoning, score, and model name.
+        JudgeVerdict with reasoning, score, and the exact model that provided the verdict.
     """
     resolved_key = (api_key or "").strip() or os.environ.get("GEMINI_API_KEY", "").strip()
 
@@ -86,13 +96,13 @@ def run_judge(
             reasoning=(
                 "No Gemini API key provided. Please supply an API key in the request "
                 "(body `api_key` or `X-API-Key` header), configure it via `/api-key`, "
-                "or set the GEMINI_API_KEY environment variable."
+                "or set the GEMINI_API_KEY environment variable in your .env file."
             ),
             score=0,
             model=model or "unknown",
         )
 
-    judge_model = model or os.environ.get("GEMINI_JUDGE_MODEL", "gemini-2.5-flash")
+    initial_model = model or os.environ.get("GEMINI_JUDGE_MODEL", MODEL_FALLBACK_POOL[0])
 
     try:
         client = genai.Client(api_key=resolved_key)
@@ -100,7 +110,7 @@ def run_judge(
         return JudgeVerdict(
             reasoning=f"Error initializing Gemini client: {str(e)}",
             score=0,
-            model=judge_model,
+            model=initial_model,
         )
 
     prompt = f"""You are an expert RAG evaluation auditor.
@@ -121,14 +131,16 @@ A score of 1 means Pass, and 0 means Fail.
 You MUST provide your reasoning BEFORE giving the score.
 """
 
-    candidate_models = [judge_model]
-    for fallback in ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash", "gemini-flash-latest"]:
+    # Build fallback ladder
+    candidate_models = [initial_model]
+    for fallback in MODEL_FALLBACK_POOL:
         if fallback not in candidate_models:
             candidate_models.append(fallback)
 
     last_error: Exception | None = None
     for candidate in candidate_models:
         try:
+            logger.info("Attempting LLM judge evaluation with model: %s", candidate)
             response = client.models.generate_content(
                 model=candidate,
                 contents=prompt,
@@ -138,22 +150,31 @@ You MUST provide your reasoning BEFORE giving the score.
                 ),
             )
             if not response.text:
-                raise ValueError("Empty response from the model.")
+                raise ValueError("Empty response received from the model.")
+
             verdict = JudgeVerdict.model_validate_json(response.text)
             verdict.model = candidate
             return verdict
+
         except Exception as e:
             last_error = e
             err_str = str(e)
-            # Try next model candidate if model was not found
-            if "NOT_FOUND" in err_str or "not found" in err_str or "404" in err_str:
-                logger.warning("Model %s not found, attempting fallback...", candidate)
-                continue
-            # For auth or rate limit errors, don't keep looping
-            break
+
+            # If authentication fails, trying other models won't help
+            if "API_KEY_INVALID" in err_str or "API key not valid" in err_str or "PERMISSION_DENIED" in err_str:
+                logger.error("Authentication error on %s: %s", candidate, e)
+                break
+
+            # Rate limit (429), High demand (503), Model not found (404), or Server error (500)
+            logger.warning(
+                "Model '%s' failed (%s). Cascading to next cheaper fallback model...",
+                candidate,
+                err_str[:120],
+            )
+            continue
 
     return JudgeVerdict(
-        reasoning=f"Error calling Gemini API: {str(last_error)}",
+        reasoning=f"Error calling Gemini API after attempting fallback pool {candidate_models}: {str(last_error)}",
         score=0,
-        model=judge_model,
+        model=initial_model,
     )

@@ -126,11 +126,16 @@ async def init_engine(db_url: str | None = None) -> AsyncEngine | None:
         return _engine
 
     except Exception as e:
+        err_str = str(e)
         logger.error("Failed to connect to database: %s", e)
+        if "Network is unreachable" in err_str or "Errno 101" in err_str:
+            hint = " (Hint: Supabase Direct Connection uses IPv6. Use the Connection Pooler URL 'aws-0-[region].pooler.supabase.com:5432' for IPv4 compatibility)."
+            err_str += hint
+
         _db_status = {
             "connected": False,
             "provider": "in-memory-fallback",
-            "message": f"Connection failed ({str(e)}). Using in-memory fallback.",
+            "message": f"Connection failed ({err_str}). Using in-memory fallback.",
         }
         _engine = None
         _session_maker = None

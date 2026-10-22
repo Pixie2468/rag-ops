@@ -40,7 +40,7 @@ class JudgeRequest(BaseModel):
     context: str | None = Field(default=None, description="Retrieved context string. If omitted, context_chunks will be joined.")
     context_chunks: list[str] = Field(default_factory=list, description="Optional list of retrieved context chunks.")
     api_key: str | None = Field(default=None, description="Gemini API key. Falls back to server GEMINI_API_KEY if not provided.")
-    model: str = Field(default="gemini-2.5-flash", description="Gemini model name to use as judge.")
+    model: str = Field(default="gemini-3.5-flash", description="Gemini model name to use as judge (falls back automatically across model pool).")
     entity_overlap_pct: float | None = Field(default=None, description="Optional pre-computed entity overlap percentage.")
     entailment_ratio: float | None = Field(default=None, description="Optional pre-computed entailment ratio.")
 
