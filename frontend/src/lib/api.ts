@@ -14,7 +14,10 @@ import type {
 } from "@/types/eval";
 import { PRESETS } from "./presets";
 
-export const DEFAULT_BACKEND_URL = "http://localhost:8000";
+export const DEFAULT_BACKEND_URL: string =
+  (typeof window !== "undefined" && localStorage.getItem("ragops-backend-url")) ||
+  (typeof process !== "undefined" && (process.env.BACKEND_URL || process.env.VITE_BACKEND_URL)) ||
+  "http://localhost:8000";
 
 export async function checkBackendHealth(baseUrl: string = DEFAULT_BACKEND_URL): Promise<boolean> {
   try {

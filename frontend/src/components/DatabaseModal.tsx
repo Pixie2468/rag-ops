@@ -22,6 +22,8 @@ interface DatabaseModalProps {
   dbStatus: DbStatusResponse | null;
   onStatusChange: (status: DbStatusResponse) => void;
   backendUrl: string;
+  onBackendUrlChange?: (newUrl: string) => void;
+  isBackendOnline?: boolean;
 }
 
 export function DatabaseModal({
@@ -30,8 +32,11 @@ export function DatabaseModal({
   dbStatus,
   onStatusChange,
   backendUrl,
+  onBackendUrlChange,
+  isBackendOnline,
 }: DatabaseModalProps) {
   const [dbUrl, setDbUrl] = useState("");
+  const [apiUrlInput, setApiUrlInput] = useState(backendUrl);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -118,6 +123,48 @@ export function DatabaseModal({
           <span className="text-[11px] text-muted-foreground truncate max-w-[220px]">
             {dbStatus?.message}
           </span>
+        </div>
+
+        {/* Backend API Endpoint Configuration */}
+        <div className="mb-4 rounded-lg border bg-muted/20 p-3 text-xs space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-foreground">Backend API URL:</span>
+            <Badge
+              variant="outline"
+              className={
+                isBackendOnline
+                  ? "text-emerald-500 border-emerald-500/30 bg-emerald-500/10 text-[10px]"
+                  : "text-amber-500 border-amber-500/30 bg-amber-500/10 text-[10px]"
+              }
+            >
+              {isBackendOnline ? "Online" : "Offline / Unreachable"}
+            </Badge>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              value={apiUrlInput}
+              onChange={(e) => setApiUrlInput(e.target.value)}
+              placeholder="https://rag-ops.onrender.com"
+              className="text-xs font-mono h-8 bg-background"
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="h-8 text-xs shrink-0"
+              onClick={() => {
+                if (apiUrlInput.trim()) {
+                  const clean = apiUrlInput.trim().replace(/\/+$/, "");
+                  onBackendUrlChange?.(clean);
+                }
+              }}
+            >
+              Update URL
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Point to your Render production backend (e.g. <code className="font-mono text-foreground">https://rag-ops.onrender.com</code>).
+          </p>
         </div>
 
         {/* Supabase Instructions */}

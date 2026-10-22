@@ -40,10 +40,25 @@ export function App() {
     return "dark";
   });
 
-  const [backendUrl, setBackendUrl] = useState(DEFAULT_BACKEND_URL);
+  const [backendUrl, setBackendUrl] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ragops-backend-url");
+      if (saved) return saved;
+    }
+    return DEFAULT_BACKEND_URL;
+  });
   const [isBackendOnline, setIsBackendOnline] = useState(false);
   const [isCheckingHealth, setIsCheckingHealth] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
+
+  const handleUpdateBackendUrl = (newUrl: string) => {
+    const clean = newUrl.trim().replace(/\/+$/, "");
+    if (!clean) return;
+    setBackendUrl(clean);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("ragops-backend-url", clean);
+    }
+  };
 
   // Database / Supabase state
   const [isDbModalOpen, setIsDbModalOpen] = useState(false);
@@ -81,14 +96,16 @@ export function App() {
   };
 
   // Check backend health & database status
-  const handleCheckHealth = useCallback(async () => {
+  const handleCheckHealth = useCallback(async (overrideUrl?: string) => {
+    const targetUrl = overrideUrl || backendUrl;
     setIsCheckingHealth(true);
-    const online = await checkBackendHealth(backendUrl);
+    const online = await checkBackendHealth(targetUrl);
     setIsBackendOnline(online);
 
     if (online) {
+      setIsDemoMode(false);
       try {
-        const dbRes = await fetchDbStatusApi(backendUrl);
+        const dbRes = await fetchDbStatusApi(targetUrl);
         setDbStatus(dbRes);
       } catch {
         setDbStatus({
@@ -97,13 +114,12 @@ export function App() {
           message: "Could not fetch DB status.",
         });
       }
+    } else {
+      setIsDemoMode(true);
     }
 
     setIsCheckingHealth(false);
-    if (!online && !isDemoMode) {
-      setIsDemoMode(true);
-    }
-  }, [backendUrl, isDemoMode]);
+  }, [backendUrl]);
 
   useEffect(() => {
     handleCheckHealth();
@@ -174,14 +190,32 @@ export function App() {
             <div className="flex items-center gap-2.5">
               <Sparkles className="size-4 shrink-0 text-amber-500" />
               <span>
-                <strong>Demo Mode Active:</strong> Backend API at <code className="font-mono bg-amber-500/20 px-1 py-0.5 rounded text-[11px]">{backendUrl}</code> is currently offline. You can test all 5 pipeline stages and evaluate presets right here in simulated demo mode.
+                <strong>Demo Mode Active:</strong> Backend API at <code className="font-mono bg-amber-500/20 px-1 py-0.5 rounded text-[11px]">{backendUrl}</code> is offline. You can test in simulated demo mode, or connect your live production Render backend.
               </span>
             </div>
             <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleCheckHealth}
+                onClick={() => {
+                  const url = window.prompt(
+                    "Enter your Render Backend URL (e.g. https://rag-ops.onrender.com):",
+                    backendUrl.includes("localhost") ? "https://rag-ops.onrender.com" : backendUrl
+                  );
+                  if (url && url.trim()) {
+                    const clean = url.trim().replace(/\/+$/, "");
+                    handleUpdateBackendUrl(clean);
+                    handleCheckHealth(clean);
+                  }
+                }}
+                className="h-7 text-xs border-amber-500/40 hover:bg-amber-500/20 font-medium"
+              >
+                Change Backend URL
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleCheckHealth()}
                 disabled={isCheckingHealth}
                 className="h-7 text-xs border-amber-500/40 hover:bg-amber-500/20"
               >
@@ -318,6 +352,11 @@ export function App() {
         dbStatus={dbStatus}
         onStatusChange={(newStatus) => setDbStatus(newStatus)}
         backendUrl={backendUrl}
+        onBackendUrlChange={(newUrl) => {
+          handleUpdateBackendUrl(newUrl);
+          handleCheckHealth(newUrl);
+        }}
+        isBackendOnline={isBackendOnline}
       />
 
       {/* Footer */}
@@ -330,7 +369,7 @@ export function App() {
           </div>
           <div className="flex items-center gap-4">
             <a
-              href="http://localhost:8000/docs"
+              href={`${backendUrl.replace(/\/+$/, "")}/docs`}
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-foreground transition-colors"
