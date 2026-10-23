@@ -137,6 +137,14 @@ async def root_get_api_key_alias() -> ApiKeyConfigResponse:
     return await get_api_key_status()
 
 
+# Optional: Mount frontend static build if available for single-port full-stack serving
+_frontend_dist = _curr.parents[3] / "frontend" / "dist"
+if _frontend_dist.exists() and (_frontend_dist / "index.html").exists():
+    from fastapi.staticfiles import StaticFiles
+    app.mount("/dashboard", StaticFiles(directory=str(_frontend_dist), html=True), name="frontend_dashboard")
+
+
+
 if __name__ == "__main__":
     import uvicorn
 

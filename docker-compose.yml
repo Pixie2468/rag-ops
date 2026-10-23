@@ -39,6 +39,23 @@ services:
     networks:
       - rag-ops-net
 
+  # React + Bun Web Dashboard GUI
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      BACKEND_URL: http://backend:8000
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - rag-ops-net
+
 volumes:
   db_data:
 

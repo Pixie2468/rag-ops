@@ -5,8 +5,27 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 )
+
+var defaultBaseURL = "http://localhost:8000"
+var configuredBaseURL = ""
+
+func GetBaseURL() string {
+	if configuredBaseURL != "" {
+		return strings.TrimRight(configuredBaseURL, "/")
+	}
+	if envURL := os.Getenv("RAGOPS_API_URL"); envURL != "" {
+		return strings.TrimRight(envURL, "/")
+	}
+	return defaultBaseURL
+}
+
+func SetBaseURL(url string) {
+	configuredBaseURL = strings.TrimRight(url, "/")
+}
 
 type EvalRequest struct {
 	Query         string   `json:"query"`
@@ -23,13 +42,45 @@ type EvalResponse struct {
 	JudgeScore     *int                   `json:"judge_score,omitempty"`
 }
 
+type HealthResponse struct {
+	Status             string `json:"status"`
+	Service            string `json:"service"`
+	LLMJudgeConfigured bool   `json:"llm_judge_configured"`
+	DatabaseConnected  bool   `json:"database_connected"`
+	DatabaseProvider   string `json:"database_provider"`
+}
+
+func CheckHealth() (*HealthResponse, error) {
+	baseURL := GetBaseURL()
+	url := fmt.Sprintf("%s/health", baseURL)
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("RAGOps backend unreachable at %s: %w", baseURL, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("backend returned non-200 status: %d", resp.StatusCode)
+	}
+
+	var health HealthResponse
+	if err := json.NewDecoder(resp.Body).Decode(&health); err != nil {
+		return nil, fmt.Errorf("failed to decode health status: %w", err)
+	}
+
+	return &health, nil
+}
+
 func RunEvaluation(req EvalRequest) (*EvalResponse, error) {
 	reqBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	url := "http://localhost:8000/evaluate/"
+	baseURL := GetBaseURL()
+	url := fmt.Sprintf("%s/evaluate/", baseURL)
 	httpReq, err := http.NewRequest("POST", url, bytes.NewBuffer(reqBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -42,7 +93,7 @@ func RunEvaluation(req EvalRequest) (*EvalResponse, error) {
 
 	resp, err := client.Do(httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("HTTP request failed: %w", err)
+		return nil, fmt.Errorf("could not connect to RAGOps backend at %s\n\n💡 To start the local backend & GUI, run:\n   docker compose up -d\n   # or\n   ./dev.sh", baseURL)
 	}
 	defer resp.Body.Close()
 

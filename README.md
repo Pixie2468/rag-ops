@@ -67,59 +67,66 @@ go run . --help
 
 ---
 
-## Quick start (Docker)
+## Quick Start (Single-Command)
+
+### Option 1: Docker Compose (Web Dashboard + API + Database)
+
+Run the entire platform with one command:
 
 ```bash
-# 1. Copy and configure environment variables
-cp .env.example .env
-
-# 2. Start PostgreSQL + backend API
-docker compose up --build -d
-
-# 3. Check logs
-docker compose logs -f backend
-
-# 4. Open the API
-open http://localhost:8000/docs
+docker compose up -d
 ```
 
-The first startup automatically runs all Alembic migrations before the server starts.
+That's it!
+
+* **Web Dashboard**: [http://localhost:3000](http://localhost:3000)
+* **REST API Server**: [http://localhost:8000](http://localhost:8000)
+* **Interactive Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+To stop: `docker compose down`
 
 ---
 
-## Local development
+### Option 2: Native Development (`./dev.sh`)
 
-### Backend
-
-See [`backend/README.md`](backend/README.md) for detailed setup instructions.
+If you are developing locally without Docker:
 
 ```bash
-cd backend
-uv sync
-uv run uvicorn rag_ops.main:app --reload
+# Start both backend and frontend hot-reloading together:
+./dev.sh
+# (or: make dev)
 ```
 
-### CLI
+---
 
-See [`cli/README.md`](cli/README.md) for detailed setup instructions.
+## Homebrew CLI (`ragops`)
 
-If you have already cloned the repository:
+Install the terminal tool:
 
 ```bash
-cd cli
-go run . --help
+brew install Pixie2468/rag-ops/ragops
 ```
 
-### Frontend
-
-See [`frontend/README.md`](frontend/README.md) for detailed setup instructions.
+### CLI Commands
 
 ```bash
-cd frontend
-bun install
-bun dev
+# Start the local Docker stack and launch the web UI in your browser:
+ragops up
+
+# Evaluate a RAG interaction from a JSON file:
+ragops run data.json
+
+# Check backend, database, and LLM judge health:
+ragops status
+
+# Open the Web Dashboard in your default browser:
+ragops ui
+
+# Stop the background Docker stack:
+ragops down
 ```
 
+```md
 Open `http://localhost:3000` to launch the interactive evaluation playground.
 
 ---

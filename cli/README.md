@@ -5,7 +5,7 @@ A terminal UI (TUI) and command-line interface for exploring RAG traces and eval
 ## Stack
 
 | Library | Purpose |
-|---------|---------|
+| ------- | ------- |
 | [cobra](https://github.com/spf13/cobra) | CLI command framework |
 | [lipgloss](https://github.com/charmbracelet/lipgloss) | TUI styling & layout |
 | [bubbletea](https://github.com/charmbracelet/bubbletea) | TUI architecture & event loop |
@@ -93,7 +93,7 @@ ragops --help
 
 ## Project structure
 
-```
+```md
 cli/
 ├── main.go           # Entry point
 ├── data.json         # Mock data file for testing
@@ -115,7 +115,7 @@ cli/
 
 ## Usage
 
-```
+```bash
 ragops [command] [flags]
 
 Available Commands:
