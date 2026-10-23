@@ -50,7 +50,11 @@ def _resolve_api_key(
             if token:
                 return token
         return stripped
-    env_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    env_key = (
+        os.environ.get("LLM_API_KEY", "").strip()
+        or os.environ.get("GEMINI_API_KEY", "").strip()
+        or os.environ.get("OPENAI_API_KEY", "").strip()
+    )
     return env_key if env_key else None
 
 

@@ -395,7 +395,7 @@ export function MetricsInspector({
                   5
                 </span>
                 <span className="text-xs font-semibold text-foreground">
-                  LLM-as-a-Judge (Gemini Flash Audit)
+                  LLM-as-a-Judge (Stage 5 Audit)
                 </span>
               </div>
               {response.judge_score !== null && response.judge_score !== undefined && (

@@ -76,9 +76,17 @@ export function EvaluationForm({
 
   const handleApiKeyChange = (val: string) => {
     if (typeof window !== "undefined") {
+      localStorage.setItem("ragops-llm-key", val);
       localStorage.setItem("ragops-gemini-key", val);
     }
     onChangeRequest({ ...request, api_key: val });
+  };
+
+  const handleModelChange = (model: string) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("ragops-llm-model", model);
+    }
+    onChangeRequest({ ...request, model });
   };
 
   const handleChunkChange = (index: number, val: string) => {
@@ -358,39 +366,52 @@ export function EvaluationForm({
             />
           </div>
 
-          {/* Optional Gemini API Key for Stage 5 LLM Judge */}
-          <div className="flex flex-col gap-1.5 rounded-lg border border-dashed border-border/80 bg-muted/10 p-3">
+          {/* Optional LLM API Key & Model for Stage 5 Judge */}
+          <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border/80 bg-muted/10 p-3">
             <div className="flex items-center justify-between">
               <Label htmlFor="eval-api-key" className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 <Key className="size-3.5 text-primary" />
-                Gemini API Key (Stage 5 LLM Judge)
+                LLM Judge API Key & Model (Stage 5)
               </Label>
               <span className="text-[10px] text-muted-foreground font-mono">
                 Optional
               </span>
             </div>
-            <div className="relative flex items-center">
-              <Input
-                id="eval-api-key"
-                type={showApiKey ? "text" : "password"}
-                value={request.api_key || ""}
-                onChange={(e) => handleApiKeyChange(e.target.value)}
-                placeholder="AIzaSy... (leave blank to use server GEMINI_API_KEY)"
-                className="text-xs font-mono pr-9"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => setShowApiKey(!showApiKey)}
-                className="absolute right-1 size-7 text-muted-foreground hover:text-foreground"
-                aria-label={showApiKey ? "Hide API key" : "Show API key"}
-              >
-                {showApiKey ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
-              </Button>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="sm:col-span-2 relative flex items-center">
+                <Input
+                  id="eval-api-key"
+                  type={showApiKey ? "text" : "password"}
+                  value={request.api_key || ""}
+                  onChange={(e) => handleApiKeyChange(e.target.value)}
+                  placeholder="API Key (leave blank to use server environment)"
+                  className="text-xs font-mono pr-9"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setShowApiKey(!showApiKey)}
+                  className="absolute right-1 size-7 text-muted-foreground hover:text-foreground"
+                  aria-label={showApiKey ? "Hide API key" : "Show API key"}
+                >
+                  {showApiKey ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                </Button>
+              </div>
+              <div className="sm:col-span-1">
+                <Input
+                  id="eval-model"
+                  type="text"
+                  value={request.model || ""}
+                  onChange={(e) => handleModelChange(e.target.value)}
+                  placeholder="gemini-3.5-flash"
+                  className="text-xs font-mono"
+                  title="Judge model (defaults to gemini-3.5-flash)"
+                />
+              </div>
             </div>
             <p className="text-[11px] text-muted-foreground leading-tight">
-              Passed to the FastAPI backend to run Gemini as an evaluation judge for Stage 5.
+              Leave blank to use the backend's configured <code className="font-mono text-foreground">LLM_API_KEY</code> / <code className="font-mono text-foreground">GEMINI_API_KEY</code>, or provide your key above.
             </p>
           </div>
         </div>

@@ -61,7 +61,7 @@ export function PipelineSpec() {
                     ? "Ungrounded number in answer"
                     : idx === 3
                     ? "NLI contradiction > 0.5"
-                    : "Gemini Judge score == 0"}
+                    : "LLM Judge score == 0"}
                 </span>
               </div>
               <div>
@@ -81,7 +81,7 @@ export function PipelineSpec() {
               <div>
                 <span className="text-muted-foreground">Execution: </span>
                 <span className="text-foreground">
-                  {idx < 4 ? "Synchronous Local CPU" : "Remote Gemini API"}
+                  {idx < 4 ? "Synchronous Local CPU" : "Remote LLM Judge API"}
                 </span>
               </div>
             </div>

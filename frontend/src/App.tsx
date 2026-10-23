@@ -64,7 +64,7 @@ export function App() {
     }
   };
 
-  // Database / Supabase state
+  // Database & Environment state
   const [isDbModalOpen, setIsDbModalOpen] = useState(false);
   const [dbStatus, setDbStatus] = useState<DbStatusResponse | null>(null);
 
@@ -72,10 +72,12 @@ export function App() {
   const [request, setRequest] = useState<EvalRequest>(() => {
     const defaultData = PRESETS[0]!.data;
     if (typeof window !== "undefined") {
-      const savedKey = localStorage.getItem("ragops-gemini-key");
-      if (savedKey) {
-        return { ...defaultData, api_key: savedKey };
-      }
+      const savedKey =
+        localStorage.getItem("ragops-llm-key") ||
+        localStorage.getItem("ragops-gemini-key") ||
+        undefined;
+      const savedModel = localStorage.getItem("ragops-llm-model") || undefined;
+      return { ...defaultData, api_key: savedKey, model: savedModel };
     }
     return defaultData;
   });
@@ -111,7 +113,7 @@ export function App() {
     const timer = setInterval(() => {
       sec++;
       if (sec >= 3) {
-        setPollStatus(`Connecting to Render (${sec}s elapsed — cold starts take ~30-60s)...`);
+        setPollStatus(`Connecting to backend (${sec}s elapsed)...`);
       }
     }, 1000);
 
@@ -140,7 +142,7 @@ export function App() {
     setIsCheckingHealth(false);
   }, [backendUrl]);
 
-  // Keep-alive ping every 9 minutes so Render free-tier never goes to sleep while page is open
+  // Keep-alive ping every 9 minutes for remote backends
   useEffect(() => {
     if (!isBackendOnline || backendUrl.includes("localhost")) return;
     const interval = setInterval(() => {
@@ -158,10 +160,20 @@ export function App() {
   // Handle Preset selection
   const handleSelectPreset = (preset: PresetItem) => {
     setActivePresetId(preset.id);
-    const savedKey = typeof window !== "undefined" ? localStorage.getItem("ragops-gemini-key") || undefined : undefined;
+    const savedKey =
+      typeof window !== "undefined"
+        ? localStorage.getItem("ragops-llm-key") ||
+          localStorage.getItem("ragops-gemini-key") ||
+          undefined
+        : undefined;
+    const savedModel =
+      typeof window !== "undefined"
+        ? localStorage.getItem("ragops-llm-model") || undefined
+        : undefined;
     setRequest({
       ...preset.data,
       api_key: savedKey,
+      model: savedModel,
     });
     setResponse(preset.mockResponse);
     setErrorMessage(null);
@@ -228,11 +240,11 @@ export function App() {
                 <div>
                   {isCheckingHealth ? (
                     <span>
-                      <strong>Connecting:</strong> {pollStatus || "Connecting to Render backend..."}
+                      <strong>Connecting:</strong> {pollStatus || "Connecting to backend..."}
                     </span>
                   ) : isDemoMode ? (
                     <span>
-                      <strong>Demo Mode Active:</strong> Using simulated local evaluation. Switch to your live Render backend anytime.
+                      <strong>Demo Mode Active:</strong> Using simulated local evaluation. Switch to your live API backend anytime.
                     </span>
                   ) : (
                     <span>
@@ -413,7 +425,7 @@ export function App() {
         </Tabs>
       </main>
 
-      {/* Supabase Database Setup Modal */}
+      {/* Database Storage & Environment Settings Modal */}
       <DatabaseModal
         isOpen={isDbModalOpen}
         onClose={() => setIsDbModalOpen(false)}
@@ -425,6 +437,10 @@ export function App() {
           handleCheckHealth(newUrl);
         }}
         isBackendOnline={isBackendOnline}
+        llmKey={request.api_key || ""}
+        onLlmKeyChange={(key) => setRequest((prev) => ({ ...prev, api_key: key }))}
+        llmModel={request.model || "gemini-3.5-flash"}
+        onLlmModelChange={(model) => setRequest((prev) => ({ ...prev, model }))}
       />
 
       {/* Footer */}

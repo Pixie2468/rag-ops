@@ -93,17 +93,17 @@ export function Header({
             </Button>
           </div>
 
-          {/* Supabase / DB Connection Pill */}
+          {/* PostgreSQL / Settings Pill */}
           {onOpenDbModal && (
             <Button
               variant="outline"
               size="sm"
               onClick={onOpenDbModal}
               className="h-8 text-xs font-medium gap-1.5 hidden sm:inline-flex"
-              title="Configure Supabase / PostgreSQL Trace Storage"
+              title="Configure PostgreSQL Storage, LLM Judge Key & Backend Settings"
             >
               <Database className="size-3.5 text-primary" />
-              <span>{isDbConnected ? "Supabase Connected" : "Connect Supabase"}</span>
+              <span>{isDbConnected ? "Postgres Connected" : "Configure DB / Keys"}</span>
               <span
                 className={`size-1.5 rounded-full ${
                   isDbConnected ? "bg-emerald-500" : "bg-amber-500"

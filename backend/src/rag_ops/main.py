@@ -103,12 +103,16 @@ async def health_check(response: Response) -> dict:
     """Health check endpoint used by monitoring, frontend, and readiness probes."""
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response.headers["Pragma"] = "no-cache"
-    has_gemini_key = bool(os.environ.get("GEMINI_API_KEY", "").strip())
+    has_llm_key = bool(
+        os.environ.get("LLM_API_KEY", "").strip()
+        or os.environ.get("GEMINI_API_KEY", "").strip()
+        or os.environ.get("OPENAI_API_KEY", "").strip()
+    )
     db_info = get_db_status()
     return {
         "status": "ok",
         "service": "rag-ops-api",
-        "llm_judge_configured": has_gemini_key,
+        "llm_judge_configured": has_llm_key,
         "database_connected": db_info.get("connected", False),
         "database_provider": db_info.get("provider", "in-memory-fallback"),
     }

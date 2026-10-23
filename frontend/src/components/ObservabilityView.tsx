@@ -129,7 +129,7 @@ export function ObservabilityView({
                 isDbConnected ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
               }`}
             />
-            {isDbConnected ? "Supabase Active" : "Connect Supabase"}
+            {isDbConnected ? "Postgres Active" : "Connect Database"}
           </Button>
 
           <Button
@@ -180,7 +180,7 @@ export function ObservabilityView({
             {stats?.total_traces || 0}
           </div>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Stored in {isDbConnected ? "Supabase" : "Memory Buffer"}
+            Stored in {isDbConnected ? "PostgreSQL" : "Memory Buffer"}
           </p>
         </div>
 

@@ -42,7 +42,7 @@ export const STAGES: StageDefinition[] = [
     stepNumber: 5,
     name: "LLM-as-a-Judge",
     shortName: "LLM Judge",
-    algorithm: "Google Gemini Flash",
+    algorithm: "LLM Judge (Gemini / OpenAI / Custom)",
     description: "Evaluates multi-hop reasoning, nuance, and qualitative depth with structured reasoning.",
     speed: "~400ms",
   },

@@ -89,14 +89,18 @@ def run_judge(
     Returns:
         JudgeVerdict with reasoning, score, and the exact model that provided the verdict.
     """
-    resolved_key = (api_key or "").strip() or os.environ.get("GEMINI_API_KEY", "").strip()
+    resolved_key = (
+        (api_key or "").strip()
+        or os.environ.get("LLM_API_KEY", "").strip()
+        or os.environ.get("GEMINI_API_KEY", "").strip()
+    )
 
     if not resolved_key:
         return JudgeVerdict(
             reasoning=(
-                "No Gemini API key provided. Please supply an API key in the request "
+                "No LLM API key provided. Please supply an API key in the request "
                 "(body `api_key` or `X-API-Key` header), configure it via `/api-key`, "
-                "or set the GEMINI_API_KEY environment variable in your .env file."
+                "or set the LLM_API_KEY / GEMINI_API_KEY environment variable in your .env file."
             ),
             score=0,
             model=model or "unknown",
