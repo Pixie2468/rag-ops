@@ -126,7 +126,6 @@ ragops ui
 ragops down
 ```
 
-```md
 Open `http://localhost:3000` to launch the interactive evaluation playground.
 
 ---
