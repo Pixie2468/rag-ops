@@ -267,8 +267,8 @@ export function App() {
                 size="sm"
                 onClick={() => {
                   const url = window.prompt(
-                    "Enter your Render Backend URL (e.g. https://rag-ops.onrender.com):",
-                    backendUrl.includes("localhost") ? "https://rag-ops.onrender.com" : backendUrl
+                    "Enter your RAGOps Backend URL (e.g. http://localhost:8000):",
+                    backendUrl || "http://localhost:8000"
                   );
                   if (url && url.trim()) {
                     const clean = url.trim().replace(/\/+$/, "");

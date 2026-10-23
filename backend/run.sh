@@ -9,8 +9,8 @@ if [ -f "$DIR/.venv/bin/python" ]; then
     PYTHON="$DIR/.venv/bin/python"
 elif command -v uv >/dev/null 2>&1; then
     exec uv run uvicorn rag_ops.main:app --reload --host 0.0.0.0 --port "${PORT:-8000}" "$@"
-elif command -v /home/darsh/.local/bin/uv >/dev/null 2>&1; then
-    exec /home/darsh/.local/bin/uv run uvicorn rag_ops.main:app --reload --host 0.0.0.0 --port "${PORT:-8000}" "$@"
+elif [ -f "$HOME/.local/bin/uv" ]; then
+    exec "$HOME/.local/bin/uv" run uvicorn rag_ops.main:app --reload --host 0.0.0.0 --port "${PORT:-8000}" "$@"
 else
     PYTHON="python3"
 fi

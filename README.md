@@ -1,6 +1,12 @@
 # RAGOps
 
-**RAGOps** is an observability and evaluation platform for Retrieval-Augmented Generation (RAG) pipelines. It captures LLM traces, stores evaluation metrics, and surfaces them through a terminal UI.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com)
+[![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED.svg)](https://docs.docker.com/compose/)
+
+**RAGOps** is a 100% free and open-source (MIT licensed) observability and evaluation platform for Retrieval-Augmented Generation (RAG) pipelines. It captures LLM traces, executes an automated 5-stage evaluation pipeline, and surfaces metrics through a terminal UI (CLI) and an interactive web dashboard.
+
+> **Local & Self-Hosted First**: Run completely on your own machine or private infrastructure with zero external telemetry and complete data privacy.
 
 ```md
 rag-ops/
@@ -144,4 +150,4 @@ Copy `.env.example` → `.env` and adjust as needed.
 
 ## License
 
-See [LICENSE](LICENSE).
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details. Free for both commercial and personal use.

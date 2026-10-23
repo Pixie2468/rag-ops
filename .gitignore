@@ -1,7 +1,34 @@
 # Python
 .venv/
-__pycache__
-*.egg-info
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.pytest_cache/
 
-# Secrets
+# Node / Frontend
+node_modules/
+dist/
+build/
+.bun/
+
+# Go / CLI
+cli/ragops
+bin/
+
+# Environment & Secrets
 .env
+.env.local
+.env.production
+.env.cloud
+*.pem
+*.key
+
+# Private / Cloud Edition (Kept in root for local management, pushed to a private repo)
+rag-ops-cloud/
+private/
+
+# System
+.DS_Store
+*.log

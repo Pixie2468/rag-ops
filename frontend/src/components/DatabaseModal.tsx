@@ -144,7 +144,7 @@ export function DatabaseModal({
             <Input
               value={apiUrlInput}
               onChange={(e) => setApiUrlInput(e.target.value)}
-              placeholder="https://rag-ops.onrender.com"
+              placeholder="http://localhost:8000"
               className="text-xs font-mono h-8 bg-background"
             />
             <Button
@@ -163,7 +163,7 @@ export function DatabaseModal({
             </Button>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            Point to your Render production backend (e.g. <code className="font-mono text-foreground">https://rag-ops.onrender.com</code>).
+            Point to your local or deployed RAGOps backend (e.g. <code className="font-mono text-foreground">http://localhost:8000</code>).
           </p>
         </div>
 
