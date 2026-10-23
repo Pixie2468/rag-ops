@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Query, Response, status
 
@@ -59,7 +59,7 @@ async def get_stats_endpoint(
 
 @router.get("/report")
 async def generate_audit_report(
-    format: str = Query(default="markdown", enum=["markdown", "json"]),
+    format: Literal["markdown", "json"] = Query(default="markdown", description="Report format: markdown or json"),
     project_name: str | None = Query(default=None),
 ) -> Response:
     """

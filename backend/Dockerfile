@@ -15,7 +15,8 @@ RUN uv venv /app/.venv && \
     uv pip install --no-cache --python /app/.venv/bin/python torch --index-url https://download.pytorch.org/whl/cpu
 
 # 2. Install project dependencies into the virtual environment
-RUN uv pip install --no-cache --python /app/.venv/bin/python -r <(uv pip compile pyproject.toml) && \
+RUN uv pip compile pyproject.toml -o requirements.txt && \
+    uv pip install --no-cache --python /app/.venv/bin/python -r requirements.txt && \
     /app/.venv/bin/python -m spacy download en_core_web_sm
 
 # 3. Copy source and install rag_ops package
@@ -33,9 +34,11 @@ COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/src /app/src
 COPY --from=builder /app/alembic /app/alembic
 COPY --from=builder /app/alembic.ini /app/alembic.ini
+COPY --from=builder /app/pyproject.toml /app/pyproject.toml
 
 # Set environment variables for CPU-only lightweight execution
 ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONPATH="/app/src:$PYTHONPATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     MALLOC_ARENA_MAX=2 \
