@@ -29,7 +29,7 @@ archives:
       - goos: windows
         format: zip
 
-brews:
+homebrews:
   - name: ragops
     repository:
       owner: Pixie2468
