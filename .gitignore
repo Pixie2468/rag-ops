@@ -15,6 +15,7 @@ build/
 
 # Go / CLI
 cli/ragops
+ragops
 bin/
 
 # Environment & Secrets
@@ -25,9 +26,6 @@ bin/
 *.pem
 *.key
 
-# Private / Cloud Edition (Kept in root for local management, pushed to a private repo)
-rag-ops-cloud/
-private/
 
 # System
 .DS_Store

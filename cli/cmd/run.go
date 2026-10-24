@@ -14,14 +14,22 @@ import (
 
 var runCmd = &cobra.Command{
 	Use:   "run [json file]",
-	Short: "Run the evaluation pipeline with the provided JSON data",
-	Args:  cobra.ExactArgs(1),
+	Short: "Run the evaluation pipeline with the provided JSON data (defaults to data.json)",
+	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		filePath := args[0]
+		filePath := "data.json"
+		if len(args) > 0 {
+			filePath = args[0]
+		} else {
+			if _, err := os.Stat("data.json"); os.IsNotExist(err) {
+				return fmt.Errorf("no input JSON file provided, and default 'data.json' was not found.\n\nUsage:\n  ragops run <file.json>\n\nExample:\n  ragops run data.json")
+			}
+			fmt.Println("ℹ️  No file specified. Using default 'data.json'...")
+		}
 		
 		file, err := os.Open(filePath)
 		if err != nil {
-			return fmt.Errorf("failed to open file: %w", err)
+			return fmt.Errorf("failed to open file '%s': %w", filePath, err)
 		}
 		defer file.Close()
 		
