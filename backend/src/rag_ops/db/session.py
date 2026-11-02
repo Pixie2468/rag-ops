@@ -1,11 +1,11 @@
 """
 Database session and connection management for Supabase / PostgreSQL.
 """
+
 from __future__ import annotations
 
 import logging
 import os
-import re
 from typing import AsyncGenerator
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
@@ -40,9 +40,9 @@ def sanitize_db_url(url: str) -> str:
 
     # Replace prefix with postgresql+asyncpg://
     if clean.startswith("postgres://"):
-        clean = "postgresql+asyncpg://" + clean[len("postgres://"):]
+        clean = "postgresql+asyncpg://" + clean[len("postgres://") :]
     elif clean.startswith("postgresql://"):
-        clean = "postgresql+asyncpg://" + clean[len("postgresql://"):]
+        clean = "postgresql+asyncpg://" + clean[len("postgresql://") :]
 
     # Parse and clean query parameters for asyncpg
     try:
@@ -59,14 +59,16 @@ def sanitize_db_url(url: str) -> str:
         query_params.pop("pgbouncer", None)
 
         new_query = urlencode(query_params, doseq=True)
-        clean = urlunparse((
-            parsed.scheme,
-            parsed.netloc,
-            parsed.path,
-            parsed.params,
-            new_query,
-            parsed.fragment,
-        ))
+        clean = urlunparse(
+            (
+                parsed.scheme,
+                parsed.netloc,
+                parsed.path,
+                parsed.params,
+                new_query,
+                parsed.fragment,
+            )
+        )
     except Exception as e:
         logger.warning("Failed to parse query params in DB URL: %s", e)
 
@@ -96,7 +98,11 @@ async def init_engine(db_url: str | None = None) -> AsyncEngine | None:
     try:
         # Supabase and cloud providers require SSL
         connect_args = {}
-        if "supabase.co" in target_url or "supabase.com" in target_url or "ssl=require" in target_url:
+        if (
+            "supabase.co" in target_url
+            or "supabase.com" in target_url
+            or "ssl=require" in target_url
+        ):
             connect_args["ssl"] = "require"
 
         _engine = create_async_engine(
@@ -165,4 +171,3 @@ async def get_db_session() -> AsyncGenerator[AsyncSession | None, None]:
         except Exception:
             await session.rollback()
             raise
-

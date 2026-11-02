@@ -48,8 +48,10 @@ While Stage 3 checks for specific entity overlap, it cannot understand semantic 
 ### Stage 5: LLM-as-a-Judge
 
 **Goal:** Evaluate nuanced, subjective qualities that smaller NLP models struggle with (e.g., tone, helpfulness, completeness, multi-hop reasoning).
-**Algorithm:** Generative LLM via Gemini API (`gemini-flash-latest`).
+**Algorithm:** Generative LLM with Cascading Tiered Fallback: Gemini Pool (`gemini-3.8-flash` → `gemini-3.5-flash` → `gemini-3.5-flash-lite` → `gemini-flash-lite-latest`) → Local Ollama model (auto-detected first model from `ollama list`).
 **How it works:**
-If the RAG output passes (or is scored by) the preceding algorithmic checks, a final prompt is constructed. This prompt includes the Query, Context, Answer, and the pre-computed metrics from earlier stages (like Entity Overlap Percentage and Entailment Ratio). The Gemini model acts as an expert auditor, returning a boolean Pass/Fail verdict and a detailed reasoning string in a strictly typed JSON schema.
+If the RAG output passes (or is scored by) the preceding algorithmic checks, a final prompt is constructed. This prompt includes the Query, Context, Answer, and the pre-computed metrics from earlier stages (like Entity Overlap Percentage and Entailment Ratio). The LLM judge acts as an expert auditor, returning a boolean Pass/Fail verdict and a detailed reasoning string in a strictly typed JSON schema.
+
+If Gemini models are unavailable, rate-limited, fail authentication, or no API key is provided, the pipeline automatically cascades down to a local Ollama model as the ultimate fallback. It detects the first model reported by `ollama list` (or starts `ollama serve` if inactive) and conducts the evaluation offline with zero cloud API reliance.
 **Why:**
-Generative LLMs are powerful but slow and expensive. By placing this stage last, we only use the LLM to judge complex heuristics that require deep contextual reasoning, saving time and money on blatantly bad RAG responses caught in Stages 1-4.
+Generative LLMs are powerful but slow and expensive. By placing this stage last, we only use the LLM to judge complex heuristics that require deep contextual reasoning, saving time and money on blatantly bad RAG responses caught in Stages 1-4. The local Ollama fallback ensures 100% evaluation pipeline reliability and zero downtime even when cloud providers experience outages or quotas are exceeded.

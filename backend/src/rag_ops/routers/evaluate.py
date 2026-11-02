@@ -1,6 +1,7 @@
 """
 Router for RAG evaluation endpoints.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -24,7 +25,7 @@ from rag_ops.models.evaluation import (
     BatchEvalResponse,
     CompareRequest,
     CompareResponse,
-    EvalRequest,
+    EvalRequest as EvaluationRequest,
     EvalResponse,
     JudgeRequest,
     JudgeResponse,
@@ -39,11 +40,11 @@ def _resolve_api_key(
     auth_header: str | None = None,
 ) -> str | None:
     """Resolve API key in order of precedence: request body -> header -> auth bearer -> env."""
-    if request_key and request_key.strip():
+    if request_key and isinstance(request_key, str) and request_key.strip():
         return request_key.strip()
-    if header_key and header_key.strip():
+    if header_key and isinstance(header_key, str) and header_key.strip():
         return header_key.strip()
-    if auth_header and auth_header.strip():
+    if auth_header and isinstance(auth_header, str) and auth_header.strip():
         stripped = auth_header.strip()
         if stripped.lower().startswith("bearer "):
             token = stripped[7:].strip()
@@ -60,7 +61,7 @@ def _resolve_api_key(
 
 @router.post("/", response_model=EvalResponse)
 async def evaluate_endpoint(
-    request: EvalRequest,
+    request: EvaluationRequest,
     x_api_key: str | None = Header(default=None, alias="X-API-Key"),
     authorization: str | None = Header(default=None),
 ) -> EvalResponse:
@@ -99,6 +100,8 @@ async def evaluate_endpoint(
         **result,
         trace_id=saved_trace.get("id"),
         latency_ms=latency_ms,
+        query=request.query,
+        answer=request.answer,
     )
 
 
@@ -126,7 +129,7 @@ async def batch_evaluate_endpoint(
 
     start_wall_clock = time.perf_counter()
 
-    async def _evaluate_single(item: EvalRequest) -> EvalResponse:
+    async def _evaluate_single(item: EvaluationRequest) -> EvalResponse:
         async with semaphore:
             item_start = time.perf_counter()
             item_api_key = item.api_key or effective_api_key
@@ -155,9 +158,13 @@ async def batch_evaluate_endpoint(
                 **res_dict,
                 trace_id=saved.get("id"),
                 latency_ms=latency_ms,
+                query=item.query,
+                answer=item.answer,
             )
 
-    results: list[EvalResponse] = await asyncio.gather(*[_evaluate_single(item) for item in batch.items])
+    results: list[EvalResponse] = await asyncio.gather(
+        *[_evaluate_single(item) for item in batch.items]
+    )
 
     total_duration = time.perf_counter() - start_wall_clock
 
@@ -171,7 +178,9 @@ async def batch_evaluate_endpoint(
         if r.stage_failed:
             stage_failures[r.stage_failed] = stage_failures.get(r.stage_failed, 0) + 1
 
-    avg_latency = round(sum(r.latency_ms for r in results) / total, 1) if total > 0 else 0.0
+    avg_latency = (
+        round(sum(r.latency_ms for r in results) / total, 1) if total > 0 else 0.0
+    )
 
     return BatchEvalResponse(
         total=total,
@@ -197,14 +206,14 @@ async def compare_endpoint(
     """
     effective_api_key = _resolve_api_key(req.api_key, x_api_key, authorization)
 
-    req_a = EvalRequest(
+    req_a = EvaluationRequest(
         query=req.query,
         context_chunks=req.context_chunks,
         answer=req.candidate_a.answer,
         api_key=effective_api_key,
         project_name="model-ab-comparison",
     )
-    req_b = EvalRequest(
+    req_b = EvaluationRequest(
         query=req.query,
         context_chunks=req.context_chunks,
         answer=req.candidate_b.answer,
@@ -219,8 +228,12 @@ async def compare_endpoint(
 
     # Determine winner
     # Logic: Pass beats Fail. If both pass or both fail, check stage reached, then entailment ratio, then judge score
-    score_a = (10 if result_a.verdict.lower() == "pass" else 0) + (result_a.judge_score or 0)
-    score_b = (10 if result_b.verdict.lower() == "pass" else 0) + (result_b.judge_score or 0)
+    score_a = (10 if result_a.verdict.lower() == "pass" else 0) + (
+        result_a.judge_score or 0
+    )
+    score_b = (10 if result_b.verdict.lower() == "pass" else 0) + (
+        result_b.judge_score or 0
+    )
 
     # Compare entailment ratios if available
     ratio_a = float(result_a.metrics.get("entailment_ratio", 0.0))
@@ -230,10 +243,14 @@ async def compare_endpoint(
 
     if score_a > score_b + 0.05:
         winner = req.candidate_a.name
-        summary = f"{req.candidate_a.name} won with higher verdict and semantic faithfulness."
+        summary = (
+            f"{req.candidate_a.name} won with higher verdict and semantic faithfulness."
+        )
     elif score_b > score_a + 0.05:
         winner = req.candidate_b.name
-        summary = f"{req.candidate_b.name} won with higher verdict and semantic faithfulness."
+        summary = (
+            f"{req.candidate_b.name} won with higher verdict and semantic faithfulness."
+        )
     else:
         winner = "Tie"
         summary = "Both candidates performed equivalently across the evaluation gates."
@@ -269,8 +286,12 @@ async def judge_endpoint(
     else:
         full_context = ""
 
-    entity_overlap = 100.0 if request.entity_overlap_pct is None else request.entity_overlap_pct
-    entailment_ratio = 1.0 if request.entailment_ratio is None else request.entailment_ratio
+    entity_overlap = (
+        100.0 if request.entity_overlap_pct is None else request.entity_overlap_pct
+    )
+    entailment_ratio = (
+        1.0 if request.entailment_ratio is None else request.entailment_ratio
+    )
 
     verdict = await asyncio.to_thread(
         run_judge,

@@ -240,9 +240,16 @@ export function BatchEvaluationView({ backendUrl, apiKey }: BatchEvaluationViewP
         <div className="divide-y">
           {(batchResult ? batchResult.results : dataset).map((item, idx) => {
             const resultItem = batchResult?.results[idx];
+            const datasetItem = dataset[idx];
             const isExpanded = expandedIndex === idx;
-            const query = "query" in item ? item.query : "";
-            const answer = "answer" in item ? item.answer : "";
+            const query =
+              "query" in item && item.query
+                ? item.query
+                : datasetItem?.query || "";
+            const answer =
+              "answer" in item && item.answer
+                ? item.answer
+                : datasetItem?.answer || "";
 
             return (
               <div key={idx} className="p-3.5 hover:bg-muted/10 transition-colors">
@@ -254,13 +261,23 @@ export function BatchEvaluationView({ backendUrl, apiKey }: BatchEvaluationViewP
                     <span className="size-5 rounded-full bg-muted flex items-center justify-center font-mono text-[10px] text-muted-foreground shrink-0">
                       {idx + 1}
                     </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-foreground truncate">
-                        {query}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground truncate">
-                        {answer}
-                      </p>
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-[10px] font-semibold text-muted-foreground uppercase shrink-0">
+                          Question:
+                        </span>
+                        <p className="text-xs font-medium text-foreground truncate">
+                          {query || "(No question provided)"}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-[10px] font-semibold text-muted-foreground/70 uppercase shrink-0">
+                          Model Output:
+                        </span>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {answer || "(No model output provided)"}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
@@ -282,19 +299,58 @@ export function BatchEvaluationView({ backendUrl, apiKey }: BatchEvaluationViewP
                 </div>
 
                 {isExpanded && (
-                  <div className="mt-3 pt-3 border-t text-xs space-y-2 bg-muted/10 p-3 rounded-lg">
+                  <div className="mt-3 pt-3 border-t text-xs space-y-2.5 bg-muted/10 p-3 rounded-lg">
                     <div>
-                      <span className="font-semibold text-foreground text-[10px] uppercase">Query:</span>
-                      <p className="font-sans text-muted-foreground">{query}</p>
+                      <span className="font-semibold text-foreground text-[10px] uppercase tracking-wide">
+                        Question (Query):
+                      </span>
+                      <p className="font-sans text-muted-foreground mt-0.5 leading-relaxed">
+                        {query || "(No question provided)"}
+                      </p>
                     </div>
                     <div>
-                      <span className="font-semibold text-foreground text-[10px] uppercase">Answer:</span>
-                      <p className="font-sans text-muted-foreground">{answer}</p>
+                      <span className="font-semibold text-foreground text-[10px] uppercase tracking-wide">
+                        Model Output (Answer):
+                      </span>
+                      <p className="font-sans text-muted-foreground mt-0.5 leading-relaxed">
+                        {answer || "(No model output provided)"}
+                      </p>
                     </div>
+                    {datasetItem?.context_chunks && datasetItem.context_chunks.length > 0 && (
+                      <div>
+                        <span className="font-semibold text-foreground text-[10px] uppercase tracking-wide">
+                          Context Chunks ({datasetItem.context_chunks.length}):
+                        </span>
+                        <div className="mt-1 space-y-1">
+                          {datasetItem.context_chunks.map((chunk, cIdx) => (
+                            <p
+                              key={cIdx}
+                              className="text-[11px] font-sans bg-background/60 p-2 rounded border border-border/40 text-muted-foreground"
+                            >
+                              {chunk}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {resultItem?.stage_failed && (
+                      <div>
+                        <span className="font-semibold text-destructive text-[10px] uppercase tracking-wide">
+                          Failed Stage:
+                        </span>
+                        <p className="font-mono text-destructive text-[11px] mt-0.5">
+                          {resultItem.stage_failed}
+                        </p>
+                      </div>
+                    )}
                     {resultItem?.judge_reasoning && (
                       <div>
-                        <span className="font-semibold text-primary text-[10px] uppercase">Judge Feedback:</span>
-                        <p className="font-sans text-muted-foreground">{resultItem.judge_reasoning}</p>
+                        <span className="font-semibold text-primary text-[10px] uppercase tracking-wide">
+                          Judge Feedback:
+                        </span>
+                        <p className="font-sans text-muted-foreground mt-0.5 leading-relaxed">
+                          {resultItem.judge_reasoning}
+                        </p>
                       </div>
                     )}
                   </div>

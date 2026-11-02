@@ -14,8 +14,8 @@ class EvalRequest(BaseModel):
     query: str = Field(description="The user query to evaluate.")
     context_chunks: list[str] = Field(description="The context chunks retrieved by the RAG system.")
     answer: str = Field(description="The generated answer to evaluate.")
-    api_key: str | None = Field(default=None, description="Optional Gemini API key for Stage 5 LLM judge.")
-    model: str | None = Field(default=None, description="Optional Gemini model override for Stage 5.")
+    api_key: str | None = Field(default=None, description="Optional Gemini API key for Stage 5 LLM judge (cascades to local Ollama if missing/exhausted).")
+    model: str | None = Field(default=None, description="Optional model override for Stage 5 (Gemini model name or 'ollama').")
     project_name: str = Field(default="default-project", description="Project namespace to associate the trace.")
 
 
@@ -30,6 +30,8 @@ class EvalResponse(BaseModel):
     judge_score: int | None = Field(default=None, description="Score provided by the LLM judge.")
     trace_id: str | None = Field(default=None, description="Persistent trace UUID in database.")
     latency_ms: int = Field(default=0, description="Pipeline execution duration in milliseconds.")
+    query: str | None = Field(default=None, description="The user query / question that was evaluated.")
+    answer: str | None = Field(default=None, description="The generated model output / answer that was evaluated.")
 
 
 class JudgeRequest(BaseModel):
@@ -39,8 +41,8 @@ class JudgeRequest(BaseModel):
     answer: str = Field(description="The generated answer to evaluate.")
     context: str | None = Field(default=None, description="Retrieved context string. If omitted, context_chunks will be joined.")
     context_chunks: list[str] = Field(default_factory=list, description="Optional list of retrieved context chunks.")
-    api_key: str | None = Field(default=None, description="Gemini API key. Falls back to server GEMINI_API_KEY if not provided.")
-    model: str = Field(default="gemini-3.5-flash", description="Gemini model name to use as judge (falls back automatically across model pool).")
+    api_key: str | None = Field(default=None, description="Gemini API key. Falls back to server GEMINI_API_KEY, then local Ollama if not provided.")
+    model: str = Field(default="gemini-3.5-flash", description="Model name to use as judge (cascades across Gemini pool down to local Ollama model).")
     entity_overlap_pct: float | None = Field(default=None, description="Optional pre-computed entity overlap percentage.")
     entailment_ratio: float | None = Field(default=None, description="Optional pre-computed entailment ratio.")
 

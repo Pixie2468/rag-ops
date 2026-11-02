@@ -54,6 +54,8 @@ export interface EvalResponse {
   judge_score: number | null;
   trace_id?: string;
   latency_ms?: number;
+  query?: string;
+  answer?: string;
 }
 
 export interface BatchEvalRequest {

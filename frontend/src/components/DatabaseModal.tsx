@@ -361,7 +361,7 @@ export function DatabaseModal({
                 className="font-mono text-xs"
               />
               <div className="flex gap-1.5 pt-1 flex-wrap">
-                {["gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.5-flash-lite", "gpt-4o-mini"].map((presetModel) => (
+                {["gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.5-flash-lite", "ollama"].map((presetModel) => (
                   <button
                     key={presetModel}
                     type="button"
