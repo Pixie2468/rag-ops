@@ -469,7 +469,12 @@ Let $A = \{S_1, S_2, \dots, S_m\}$ be the set of sentences in Answer $A$, and le
 $$\text{Entailment Ratio} = \frac{1}{m} \sum_{i=1}^{m} \mathbb{I}\left(P(\text{Entailment} \mid C, S_i) > 0.5\right)$$
 
 Where $\mathbb{I}(\cdot)$ is the indicator function. If for any $S_i$:
-$$P(\text{Contradiction} \mid C, S_i) > 0.5 \implies \text{Verdict} = \text{Logical\_Contradiction}$$
+
+$$
+P(\text{Contradiction} \mid C, S_i) > 0.5
+\implies
+\text{Verdict} = \texttt{Logical\_Contradiction}
+$$
 
 ### 3. Model Comparison Scoring Function
 For Candidate $X \in \{A, B\}$:
