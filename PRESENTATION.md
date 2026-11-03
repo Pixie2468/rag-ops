@@ -6,28 +6,57 @@
 
 ## Table of Contents
 
-1. [Executive Summary & The Elevator Pitch](#1-executive-summary--the-elevator-pitch)
-2. [The Problem: The Production RAG Reliability Crisis](#2-the-problem-the-production-rag-reliability-crisis)
-3. [The Solution: The 5-Stage Fail-Fast Architecture](#3-the-solution-the-5-stage-fail-fast-architecture)
-4. [High-Level & Detailed Backend Architecture](#4-high-level--detailed-backend-architecture)
-5. [Deep Dive: The 5-Stage Evaluation Pipeline](#5-deep-dive-the-5-stage-evaluation-pipeline)
-   - [Stage 1: Sanity & Refusal Gate (Regex)](#stage-1-sanity--refusal-gate-regex)
-   - [Stage 2: Context Relevance (Cross-Encoder)](#stage-2-context-relevance-cross-encoder)
-   - [Stage 3: Lexical Groundedness (spaCy NER + Regex)](#stage-3-lexical-groundedness-spacy-ner--regex)
-   - [Stage 4: Semantic Faithfulness (NLI Cross-Encoder)](#stage-4-semantic-faithfulness-nli-cross-encoder)
-   - [Stage 5: LLM-as-a-Judge (Gemini Pool + Ollama Fallback)](#stage-5-llm-as-a-judge-gemini-pool--ollama-fallback)
-6. [Core Platform Features in Detail](#6-core-platform-features-in-detail)
-   - [Feature 1: Single Run Playground (Interactive Triad Evaluation)](#feature-1-single-run-playground-interactive-triad-evaluation)
-   - [Feature 2: Observability & Trace History (Telemetry & Reports)](#feature-2-observability--trace-history-telemetry--reports)
-   - [Feature 3: Batch Benchmark Evaluation (Dataset Testing at Scale)](#feature-3-batch-benchmark-evaluation-dataset-testing-at-scale)
-   - [Feature 4: Model & Prompt A/B Comparison (Head-to-Head Arena)](#feature-4-model--prompt-ab-comparison-head-to-head-arena)
-   - [Feature 5: Pipeline Spec & System Self-Documentation](#feature-5-pipeline-spec--system-self-documentation)
-   - [Feature 6: Multi-Modal Interfaces (Web, Terminal TUI, Python SDK)](#feature-6-multi-modal-interfaces-web-terminal-tui-python-sdk)
-   - [Feature 7: Zero-Downtime Data Layer & Self-Healing Backends](#feature-7-zero-downtime-data-layer--self-healing-backends)
-7. [Mathematical Formulations & Scoring Logic](#7-mathematical-formulations--scoring-logic)
-8. [Backend Implementation Details & Data Contracts](#8-backend-implementation-details--data-contracts)
-9. [Step-by-Step 10-Minute Presentation & Demo Script](#9-step-by-step-10-minute-presentation--demo-script)
-10. [Anticipated Questions & Winning Answers (Q&A Defense)](#10-anticipated-questions--winning-answers-qa-defense)
+- [RAGOps — Complete Technical \& Architectural Presentation Guide](#ragops--complete-technical--architectural-presentation-guide)
+  - [Table of Contents](#table-of-contents)
+  - [1. Executive Summary \& The Elevator Pitch](#1-executive-summary--the-elevator-pitch)
+    - [The 30-Second Pitch](#the-30-second-pitch)
+    - [Key Highlights](#key-highlights)
+  - [2. The Problem: The Production RAG Reliability Crisis](#2-the-problem-the-production-rag-reliability-crisis)
+  - [3. The Solution: The 5-Stage Fail-Fast Architecture](#3-the-solution-the-5-stage-fail-fast-architecture)
+    - [Why Fail-Fast Matters](#why-fail-fast-matters)
+  - [4. High-Level \& Detailed Backend Architecture](#4-high-level--detailed-backend-architecture)
+    - [End-to-End System Component Diagram](#end-to-end-system-component-diagram)
+    - [Database Entity-Relationship Diagram](#database-entity-relationship-diagram)
+    - [Dynamic Resilience \& Database Decoupling](#dynamic-resilience--database-decoupling)
+  - [5. Deep Dive: The 5-Stage Evaluation Pipeline](#5-deep-dive-the-5-stage-evaluation-pipeline)
+    - [Stage 1: Sanity \& Refusal Gate (Regex)](#stage-1-sanity--refusal-gate-regex)
+    - [Stage 2: Context Relevance (Cross-Encoder)](#stage-2-context-relevance-cross-encoder)
+    - [Stage 3: Lexical Groundedness (spaCy NER + Regex)](#stage-3-lexical-groundedness-spacy-ner--regex)
+    - [Stage 4: Semantic Faithfulness (NLI Cross-Encoder)](#stage-4-semantic-faithfulness-nli-cross-encoder)
+    - [Stage 5: LLM-as-a-Judge (Gemini Pool + Ollama Fallback)](#stage-5-llm-as-a-judge-gemini-pool--ollama-fallback)
+  - [6. Core Platform Features in Detail](#6-core-platform-features-in-detail)
+    - [Feature 1: Single Run Playground (Interactive Triad Evaluation)](#feature-1-single-run-playground-interactive-triad-evaluation)
+    - [Feature 2: Observability \& Trace History (Telemetry \& Reports)](#feature-2-observability--trace-history-telemetry--reports)
+    - [Feature 3: Batch Benchmark Evaluation (Dataset Testing at Scale)](#feature-3-batch-benchmark-evaluation-dataset-testing-at-scale)
+    - [Feature 4: Model \& Prompt A/B Comparison (Head-to-Head Arena)](#feature-4-model--prompt-ab-comparison-head-to-head-arena)
+    - [Feature 5: Pipeline Spec \& System Self-Documentation](#feature-5-pipeline-spec--system-self-documentation)
+    - [Feature 6: Multi-Modal Interfaces (Web, Terminal TUI, Python SDK)](#feature-6-multi-modal-interfaces-web-terminal-tui-python-sdk)
+      - [1. React 19 Web Dashboard](#1-react-19-web-dashboard)
+      - [2. Go Terminal TUI CLI (`ragops`)](#2-go-terminal-tui-cli-ragops)
+      - [3. Python SDK \& `@observe` Decorator](#3-python-sdk--observe-decorator)
+    - [Feature 7: Zero-Downtime Data Layer \& Self-Healing Backends](#feature-7-zero-downtime-data-layer--self-healing-backends)
+  - [7. Mathematical Formulations \& Scoring Logic](#7-mathematical-formulations--scoring-logic)
+    - [1. Lexical Groundedness (Jaccard Entity Overlap)](#1-lexical-groundedness-jaccard-entity-overlap)
+    - [2. Semantic Faithfulness (Entailment Ratio)](#2-semantic-faithfulness-entailment-ratio)
+    - [3. Model Comparison Scoring Function](#3-model-comparison-scoring-function)
+  - [8. Backend Implementation Details \& Data Contracts](#8-backend-implementation-details--data-contracts)
+    - [Core REST Endpoints](#core-rest-endpoints)
+    - [Evaluation Request \& Response Schemas](#evaluation-request--response-schemas)
+      - [Request (`POST /evaluate/`)](#request-post-evaluate)
+      - [Response (`200 OK`)](#response-200-ok)
+  - [9. Step-by-Step 10-Minute Presentation \& Demo Script](#9-step-by-step-10-minute-presentation--demo-script)
+    - [Minute 0:00 – 1:30 | The Hook \& The Problem](#minute-000--130--the-hook--the-problem)
+    - [Minute 1:30 – 3:30 | The 5-Stage Fail-Fast Concept](#minute-130--330--the-5-stage-fail-fast-concept)
+    - [Minute 3:30 – 6:00 | Live Web UI Demo (Single Run \& Presets)](#minute-330--600--live-web-ui-demo-single-run--presets)
+    - [Minute 6:00 – 7:30 | Model A/B Comparison \& Batch Benchmark](#minute-600--730--model-ab-comparison--batch-benchmark)
+    - [Minute 7:30 – 8:30 | Observability \& Audit Report Export](#minute-730--830--observability--audit-report-export)
+    - [Minute 8:30 – 10:00 | CLI, Python SDK, \& Wrap-Up](#minute-830--1000--cli-python-sdk--wrap-up)
+  - [10. Anticipated Questions \& Winning Answers (Q\&A Defense)](#10-anticipated-questions--winning-answers-qa-defense)
+    - [Q1: "How does RAGOps compare to Ragas or TruLens?"](#q1-how-does-ragops-compare-to-ragas-or-trulens)
+    - [Q2: "Why use a Cross-Encoder for Context Relevance instead of Bi-Encoder embeddings?"](#q2-why-use-a-cross-encoder-for-context-relevance-instead-of-bi-encoder-embeddings)
+    - [Q3: "What happens if Google Gemini goes down or API keys run out?"](#q3-what-happens-if-google-gemini-goes-down-or-api-keys-run-out)
+    - [Q4: "Can RAGOps run completely air-gapped without internet access?"](#q4-can-ragops-run-completely-air-gapped-without-internet-access)
+    - [Q5: "How difficult is it to integrate into an existing LangChain or LlamaIndex app?"](#q5-how-difficult-is-it-to-integrate-into-an-existing-langchain-or-llamaindex-app)
 
 ---
 
@@ -48,15 +77,19 @@
 ## 2. The Problem: The Production RAG Reliability Crisis
 
 Retrieval-Augmented Generation (RAG) is the industry standard architecture for connecting Large Language Models to private corporate knowledge bases. However, deploying RAG into production introduces four critical failure modes:
-
 ```mermaid
 flowchart TD
     UserQuery["User Query (Q)"] --> Retriever["Vector Retriever / Search"]
-    Retriever -->|Failure 1: Irrelevant Context| Context["Retrieved Context Chunks (C)"]
+
+    Retriever -->|"Failure 1: Irrelevant Context"| Context["Retrieved Context Chunks (C)"]
+
     Context --> Generator["LLM Generator"]
-    Generator -->|Failure 2: Model Refusal| Answer["Generated Answer (A)"]
-    Generator -->|Failure 3: Ungrounded Hallucinations (Numbers/Dates)| Answer
-    Generator -->|Failure 4: Logical Contradictions| Answer
+
+    Generator -->|"Failure 2: Model Refusal"| Answer["Generated Answer (A)"]
+
+    Generator -->|"Failure 3: Ungrounded Hallucinations (Numbers/Dates)"| Answer
+
+    Generator -->|"Failure 4: Logical Contradictions"| Answer
 ```
 
 1. **Silent Retrieval Failures**: The vector retriever fetches chunks that have semantic overlap with the prompt keywords but zero factual answers to the actual question. The generator is forced to speculate.
